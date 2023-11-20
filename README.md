@@ -40,4 +40,4 @@ If you use these data, please cite the original authors:
 * [**07-plot-phylomorph-dist.Rmd**](/Analysis/07-plot-phylomorph-dist.Rmd) Plots phylo-morphological distance plots for both the full shape and shape residual datasets. **Generates Figure 5.**
 
 ### Custom functions
-Some analyses call custom functions, most of which are defined in the [..Data/Functions/utilities.R](/Data/Functions/utilities.R) file. A modified version of `geomorph`'s function `plotGMPhyloMorphoSpace` is defined in the [..Data/Functions/plotGMPhyloMorphoSpace_plotmod.R](/Data/Functions/plotGMPhyloMorphoSpace_plotmod.R) file.
+Some analyses call custom functions, most of which are defined in the [..Functions/utilities.R](/Functions/utilities.R) file. A modified version of `geomorph`'s function `plotGMPhyloMorphoSpace` is defined in the [..Functions/plotGMPhyloMorphoSpace_plotmod.R](/Functions/plotGMPhyloMorphoSpace_plotmod.R) file.
