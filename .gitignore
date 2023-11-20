@@ -1,0 +1,11 @@
+## R ignore
+.Rhistory
+*.Rda
+*.rda
+*.RData
+*.Rapp.history
+*.png
+*.ai
+*.pdf
+*.eps
+

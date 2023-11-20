@@ -1,0 +1,165 @@
+---
+title: "07-plot-phylomorph-dist"
+author: "Ariel Marcy"
+date: "1/15/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = '../Rodents_and_CREA')
+```
+
+# Make phylo-morphological distance plots
+Assess limits of morphological distance (aka divergence) as it relates to phylogenetic distance. Calculated for full shape dataset (with allometry) and for shape residual dataset (allometry-free).
+
+Creates bipanel Figure 5.
+
+### Load packages, functions, and data from previous steps
+```{r message = FALSE}
+library(geomorph)
+library(stringr)
+library(picante)  # needed for distance matrix
+
+# This sets the wd to local
+library(rstudioapi) # Safely Access the RStudio API
+setwd(dirname(getActiveDocumentContext()$path))
+
+source("../Functions/utilities.R")  # custom functions
+load(file = "../Data/Processed/03-main-data.rda")
+load(file = "../Data/Processed/03-tree-data.rda")
+load(file = "../Data/Processed/03-graphing-vectors.rda")
+load(file = "../Data/Processed/04-residual-data.rda")
+```
+
+## Analyze phylogenetic and morphological distance matrices
+First, generate distances matrices that can be comparable.
+```{r}
+# Phylo distance matrix
+phylo.matrix <- cophenetic(aus.tree) / 2  # divide by two to convert distance to millions of years since Last Common Ancestor
+
+# Morphological distance matrix
+mean.gpa <- gpagen(mean.shapes, ProcD = TRUE)  # use mean shapes of species
+#morph.matrix <- as.matrix(mean.gpa$procD)  # ProcD = Procrustes distance
+#mean.gpa$procD isn't created on some computers because of memory allocation issues. As per the instructions in geomorph, instead creating the distance matrix using the dist function. Note that this requires taking the coordinates into a 2D array, not mentioned in instructions. 
+morph.matrix <- dist(two.d.array(mean.gpa$coords), method="euclidean")
+
+morph.matrix <- as.matrix(morph.matrix)
+
+# Make names shorter
+long.names <- colnames(phylo.matrix)
+short.names <- NULL 
+for(i in 1:length(long.names)) {
+        sep <- strsplit(long.names[i], "_")
+        new.name <- paste(str_sub(sep[[1]][1], 1, 3), str_sub(sep[[1]][2], 1, 3), sep = "_")
+        short.names <- c(short.names, new.name)
+}
+
+# Replace with short names
+row.names(phylo.matrix) <- short.names  # phylo matrix
+colnames(phylo.matrix) <- short.names
+row.names(morph.matrix) <- short.names  # morph matrix
+colnames(morph.matrix) <- short.names
+```
+
+### Turn distance matrices into dataframes and then combine
+Write function that creates the same, comparable table structure taking in the distance matrices from above, and the name for the distance in the matrix.
+```{r}
+# Function takes matrix from above and user-provided label for dist. measured
+make.table <- function(matrix, d.name) {
+        new.table <- as.data.frame(as.table(matrix))  # matrix --> dataframe
+        new.table[, 4] <- NA  # initialize pair name column
+        colnames(new.table) <- c("spp1", "spp2", d.name, "pair")
+        
+        # Remove same-same comparisons (where distance = 0)
+        new.table <- new.table[which(new.table[, d.name] > 0), ]
+        
+        # Remove permutations by alphabetizing the species names for each pair
+        for(i in 1:dim(new.table)[1]) {
+                pair.names <- c(as.character(new.table[i, "spp1"]), as.character(new.table[i, "spp2"]))
+                pair.index <- str_order(c(as.character(new.table[i, "spp1"]), as.character(new.table[i, "spp2"])))
+                pair <- paste(pair.names[pair.index[1]], pair.names[pair.index[2]], sep = "-")  # pair names in alpha order
+                new.table[i, "pair"] <- pair
+        }
+        
+        new.table <- new.table[!duplicated(new.table[, "pair"]), ]  # only unique pair combinations
+        return(new.table)
+}
+
+# Run on both matrices, then merge by pair
+phylo.table <- make.table(phylo.matrix, "phylo.d")
+morph.table <- make.table(morph.matrix, "morph.d")
+master.table <- merge(phylo.table, morph.table[, 3:4], by = "pair")
+```
+
+## Repeat Phylo/Morph distance plot using shape residuals
+```{r}
+# Morphological distance matrix for residuals
+mean.gpa.res <- gpagen(residuals, ProcD = TRUE)
+
+#again here separately creating the distance matrix
+#morph.matrix.res <- as.matrix(mean.gpa.res$procD)
+
+morph.matrix.res <- dist(two.d.array(mean.gpa.res$coords), method="euclidean")
+
+morph.matrix.res <- as.matrix(morph.matrix.res)
+
+
+# Shorten row and column names
+row.names(morph.matrix.res) <- short.names
+colnames(morph.matrix.res) <- short.names
+
+# Make comparable table to phylo distance using function defined above
+morph.table.r <- make.table(morph.matrix.res, "morph.d.r")
+master.table.r <- merge(phylo.table, morph.table.r[, 3:4], by = "pair")
+```
+
+## Plots for phylo-morph distance pairs
+First, set up colors
+```{r}
+# Create color key
+just.genera <- NULL
+for(i in 1:length(short.names)){
+        sep <- strsplit(short.names[i], "_")
+        just.genera <- c(just.genera, sep[[1]][1])
+}
+gen.col <- col.phylo[match(just.genera, names(col.phylo))]
+names(gen.col)[5] <- "Mas"
+gen.col[5] <- gen.col[16]  # Fix Mastacomys color
+
+# Points coded for each individual specimen
+alpha.col.spp1 <- gen.col[2:37]  # subset because C pen isn't in this col
+alpha.col.spp2 <- gen.col
+
+# Save in table for ease in plotting later on
+master.table$col.spp1 <- PlotByGroup(master.table, "spp1", alpha.col.spp1)
+master.table$col.spp2 <- PlotByGroup(master.table, "spp2", alpha.col.spp2)
+```
+
+### Export Figure 5
+```{r}
+genera.phylo.full <- c("Mus", "Rattus", "Pogonomys", "Xeromys", "Hydromys", "Notomys", "Pseudomys", "Zyzomys", "Leggadina", "Uromys", "Melomys", "Leporillus", "Mesembriomys", "Conilurus")
+
+# Set up multi-panel figure for export
+setEPS()
+postscript("../Data/Results/Figure5_PhyloMorph_Dist.eps")
+mat <- matrix(c(1, 2), 2, 1, byrow = TRUE)  # 2 rows, 1 column
+layout(mat, widths = rep.int(1, ncol(mat)), heights = rep.int(1, nrow(mat))) 
+
+# A) Plot with allometry
+par(mar = c(1, 4, 3, 1))
+plot(master.table$phylo.d, master.table$morph.d, col = master.table$col.spp1, bg = master.table$col.spp2, pch = 21, xaxt = 'n', ylim = c(0.01, 0.205), ylab = "Morph. distance")
+axis(1, labels = FALSE)
+text(0.25, 0.197, "a", cex = 1.5)
+legend("topleft", legend = "full shape", inset = c(0.004, 0.01), bty = "n")
+
+# B) Plot with residuals
+par(mar = c(4.25, 4, 0, 1))
+plot(master.table.r$phylo.d, master.table.r$morph.d.r, col = master.table$col.spp1, bg = master.table$col.spp2, pch = 21, ylim = c(0.01, 0.205), xlab = "", ylab = "Morph. distance")
+title(xlab = "Phylogenetic distance (~million years since common ancestor)", line = 2.3)
+text(0.25, 0.197, "b", cex = 1.5)
+legend("topleft", legend = "shape residual", inset = c(0.004, 0.01), bty = "n")
+legend(4, 0.21, legend = genera.phylo.full, text.font = 3, col = col.phylo, pch = 16, cex = 0.65, pt.cex = 0.7, ncol = 5, x.intersp = 0.8, text.width = 1.2, bty = "n", inset = c(0.12, 0))
+
+dev.off()
+```
