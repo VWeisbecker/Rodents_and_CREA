@@ -1,0 +1,763 @@
+---
+title: "06-test-modularity"
+author: "Ariel Marcy"
+date: "10/21/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_knit$set(root.dir = '../eco-rodents')
+```
+
+# Test variation within morphospace
+What is causing high levels of allometry? Is it functional integration of the gnawing apparatus (mostly in the top cranium-rostrum area), for example? 
+
+1) Tests modularity adjusting for phylogenetic signal using CR coefficients
+
+2) Tests modularity with Mantel tests of PC scores distance matrices from each module
+
+3) Tests for global integration
+
+Makes Figure 4, Table 1, and Supplementary Figure 3
+
+### Load packages, functions, and data from previous steps
+```{r message = FALSE}
+library(png)         # CRAN v0.1-8  
+library(wesanderson) # CRAN v0.3.6
+library(colorspace)  # CRAN v2.1-0  
+library(vegan)       # CRAN v2.6-4  
+library(geomorph)    # CRAN v4.0.6
+library(data.table)  # CRAN v1.14.8
+library(magick)      # CRAN v2.8.0
+
+# This sets the wd to local
+library(rstudioapi) # Safely Access the RStudio API
+setwd(dirname(getActiveDocumentContext()$path))
+
+source("../Functions/utilities.R")  # custom functions
+load(file = "../Data/Processed/03-main-data.rda")
+load(file = "../Data/Processed/03-tree-data.rda")
+load(file = "../Data/Processed/03-graphing-vectors.rda")
+load(file = "../Data/Processed/allometry_residuals.rda")
+
+# Can load in time consuming modularity tests after first run:
+#load(file = "../Data/Processed/06-modularity.rda")
+```
+
+## Choose the modules
+The five modules will need to be designated from the LM numbers. The first time, this was done with `define.modules()` but each module was then saved in a .csv file so this step can be repeated much more quickly.
+
+### Load in the partition definitions and numbers
+```{r}
+lm.modules <- read.csv("../Data/Processed/Landmark_modules.csv", sep = ",", header = TRUE)
+
+# Add landmark numbers; col #4 gives the Goswami module definitions
+ n.num <- c(sum(lm.modules[, 4] == "basicran"), sum(lm.modules[, 4] == "molar"), sum(lm.modules[, 4] == "orbital"), sum(lm.modules[, 4] == "rostrum"), sum(lm.modules[, 4] == "vault"))
+```
+
+### Visualize the landmark types
+```{r}
+# Deconstruct function from Thomas's code in Landmark-test
+ref <- mshape(mean.shapes)  
+lm.levels <- unique(lm.modules[, 5])
+lm.colors <- c("blue", "gray", "black")  # semi, patch, fixed
+
+# Subset the landmarks according to the partitions
+lm.parts <- list()
+for(i in 1:length(lm.levels)){
+        lm.parts[[i]] <- which(lm.modules[, 5] == lm.levels[[i]])
+}
+
+# 3D plot of the partitions
+open3d()
+for (i in 1:length(lm.levels)){
+        spheres3d(ref[lm.parts[[i]], 1], ref[lm.parts[[i]], 2], ref[lm.parts[[i]], 3], col = lm.colors[i], lit = TRUE, radius = 0.001, asp = FALSE)
+}
+```
+
+### Visualize the modules from Goswami 2006/7
+6 modules hypothesized for mammals, our dataset supports 5 (missing zygomatic)
+```{r}
+# Deconstruct function from Thomas's code in Landmark-test
+ref <- mshape(mean.shapes)
+mod.levels<- sort(unique(lm.modules[, 4]))  # 5 (of 6) modules from Goswami
+
+# Define nice colors for modules
+mod.colors <- c(wes_palette("GrandBudapest1")[2:4], wes_palette("GrandBudapest2")[1:2])
+
+# Subset the landmarks according to the modules
+mod.parts <- list()
+for(i in 1:length(mod.levels)){
+  mod.parts[[i]] <- which(lm.modules[, 4] == mod.levels[[i]])
+}
+```
+
+### Make image of 3D plot of the modules for Fig. 4A
+```{r}
+open3d(windowRect = c(0, 0, 2400, 2400))
+for(i in 1:length(mod.levels)) {
+        spheres3d(ref[mod.parts[[i]], 1], ref[mod.parts[[i]], 2], ref[mod.parts[[i]], 3], col = mod.colors[i], lit = TRUE, radius = 0.0015, asp = FALSE)
+        #rgl.texts(ref[mod.parts[[i]], 1], ref[mod.parts[[i]], 2], ref[mod.parts[[i]], 3], mod.parts[[i]], offset = 100, color = c("black"))
+}
+#view3d(phi = 0)
+#rgl.snapshot("../Data/Processed/module_ventral.png")
+
+view3d(phi = 90)  # Lateral view, dorsal side up
+rgl.snapshot("../Data/Processed/modules.png")
+
+# Remove whitespace from new image (requires ImageMagik installed on PC)
+system("mogrify ../Data/Processed/modules.png -trim ../Data/Processed/*.png")
+```
+
+## Test INTEGRATION with 5 modules for full and residual shape dataset - PLS
+
+```{r}
+
+basicran <- mean.shapes[which(lm.modules[, 4] == "basicran"), ,]
+molar <- mean.shapes[which(lm.modules[, 4] == "molar"), ,]
+orbital <- mean.shapes[which(lm.modules[, 4] == "orbital"), ,]
+rostrum <- mean.shapes[which(lm.modules[, 4] == "rostrum"), ,]
+vault <- mean.shapes[which(lm.modules[, 4] == "vault"), ,]
+
+module_list <- list( basicran=basicran, molar=molar, orbital=orbital, rostrum=rostrum, vault=vault)
+
+load(file = "../Data/Processed/06-integration.rda")
+
+
+# Test with the phylogentic tree (and mean shapes)
+# int.test.5.phy <- phylo.integration(mean.shapes, partition.gp = lm.modules[, 4], phy=aus.tree)
+# int.test.5.res <- phylo.integration(residuals, partition.gp = lm.modules[, 4], phy=aus.tree)
+# # Save time consuming tests
+# save(int.test.5.phy, int.test.5.res, file = "../Data/Processed/06-integration.rda")
+
+R_pls_matrix <- matrix( nrow=length(mean_modules), ncol=length(mean_modules))
+rownames(R_pls_matrix) <- names(mean_modules)
+colnames(R_pls_matrix) <- names(mean_modules)
+
+R_pls_matrix[lower.tri(R_pls_matrix)] <- round((int.test.5.phy$pairwise.P.values), 3)
+#for some reason, the upper.tri does not order the p values correctly. So below is an interim step that fils the upper triangle with appropriate p values.
+R_pls_matrix <- t(R_pls_matrix)
+
+R_pls_matrix[lower.tri(R_pls_matrix)] <- round(int.test.5.phy$r.pls.mat, 2)
+
+# now for RESIDUALS
+
+R_pls_matrix_res <- matrix( nrow=length(mean_modules), ncol=length(mean_modules))
+rownames(R_pls_matrix_res) <- names(mean_modules)
+colnames(R_pls_matrix_res) <- names(mean_modules)
+
+R_pls_matrix_res[lower.tri(R_pls_matrix_res)] <- round((int.test.5.res$pairwise.P.values), 3)
+#for some reason, the upper.tri does not order the p values correctly. So below is an interim step that fils the upper triangle with appropriate p values.
+R_pls_matrix_res <- t(R_pls_matrix_res)
+
+R_pls_matrix_res[lower.tri(R_pls_matrix_res)] <- round(int.test.5.res$r.pls.mat, 2)
+
+t(R_pls_matrix_res)
+
+Integration_results_supplementary <- cbind(R_pls_matrix, c(rep(NA,5)),R_pls_matrix_res)
+
+
+#Or maybe it is a bit clearer to take out probability values and instead go for just highlighting them. 
+
+
+Integration_results <- R_pls_matrix
+
+#There's a lot of transposing going on here, but I don't know how to improve
+Integration_results[upper.tri(Integration_results)] <- t(R_pls_matrix_res)[upper.tri(t(R_pls_matrix_res))]
+  
+diag(Integration_results) <-  unlist(lapply(module_list, nrow))
+  
+  
+ 
+
+
+write.csv(Integration_results, file="../Data/Results/Integration_pls_results.csv")
+write.csv(Integration_results_supplementary, file="../Data/Results/Supp_Full_Integration_pls_results.csv")
+
+```
+
+#test INTEGRATION between pairs of modules; this repeats the full-shape integration analysis, which contains the pairwise values, but is needed to get the analysis objects to also compare integration strengths
+
+```{r}
+
+
+#setting up the combinations to be analysed
+
+Combinations <- c( names(module_list), names(module_list) )
+Combinations <- unique(Combinations)
+Combinations <- combn( Combinations , 2 )
+
+
+#Make data frame
+Combination_matrix <- matrix(nrow=ncol(Combinations), ncol=nrow(Combinations)) 
+colnames(Combination_matrix) <- c("Rpls", "p")
+rownames(Combination_matrix) <- paste(Combinations[1,], Combinations[2,], sep=" x ")
+Combination_matrix <- as.data.frame(Combination_matrix)
+
+#an object to receive all comparisons
+
+integration_analyses <- vector("list", 10)
+
+
+
+for (i in 1:ncol(Combinations)){
+  
+temp <- phylo.integration(module_list[[which(names(module_list)== Combinations[1,i])]],
+                          module_list[[which(names(module_list)== Combinations[2,i])]],
+                          phy=aus.tree)
+
+integration_analyses[[i]]<- temp
+
+Combination_matrix$Rpls[i] <- temp$r.pls
+Combination_matrix$p [i] <- temp$P.value
+
+}
+
+#give integration analyses objects the appropriate names
+
+names(integration_analyses) <- paste(Combinations[1,], Combinations[2,], sep=" x ")
+
+
+
+#Now fix up table
+R_pls_matrix <- matrix( nrow=length(module_list), ncol=length(module_list))
+
+
+R_pls_matrix[lower.tri(R_pls_matrix)] <- round(Combination_matrix$p, 3)
+#necessary because I can't figure out how to fill the upper triangle properly, so transposing lower triangle instead
+R_pls_matrix <- t(R_pls_matrix)
+R_pls_matrix[lower.tri(R_pls_matrix)] <- round(Combination_matrix$Rpls, 2)
+
+rownames(R_pls_matrix) <- names(module_list)
+colnames(R_pls_matrix) <- names(module_list)
+
+
+#note that the R-pls values should be the same as the overall integration output
+#R_pls_matrix
+#Integration_results; R_pls_matrix
+
+#Create all combinations of modules
+
+Combinations_compare <- c( names(module_list), names(module_list) )
+Combinations_compare <- unique( Combinations_compare )
+Combinations_compare <- combn( Combinations_compare , 2 )
+#Combinations_compare <- paste(Combinations_compare[1,], Combinations_compare[2,])
+
+
+
+#make empty list to receive integration analyses objects and name appropriately
+phylo_integration_list <- vector("list",ncol(Combinations_compare))
+names(phylo_integration_list) <- c( paste(Combinations_compare[1,], Combinations_compare[2,]))
+
+
+for (i in 1:ncol(Combinations_compare)){
+  
+phylo_integration_list [[i]] <- phylo.integration(module_list[[which(names(module_list)==Combinations_compare[2,i])]],
+                          module_list[[which(names(module_list)==Combinations_compare[1,i])]],
+                          phy=aus.tree, iter=1000)
+
+}
+
+#After all this, we now just run a simple compare.pls line to compare integration strengths!
+
+pls_comparison <- compare.pls(phylo_integration_list)
+
+
+pls_comparison_matrix_P <- matrix(round(pls_comparison$pairwise.P,3), 
+                                nrow=ncol(Combinations_compare), 
+                                ncol=ncol(Combinations_compare), 
+                                dimnames=list(rownames(pls_comparison$pairwise.P), colnames(pls_comparison$pairwise.P)))
+
+pls_comparison_matrix_Z <- matrix(round(pls_comparison$pairwise.z, 2), 
+                                         nrow=ncol(Combinations_compare), 
+                                         ncol=ncol(Combinations_compare),
+                                         dimnames=list(rownames(pls_comparison$pairwise.P), colnames(pls_comparison$pairwise.P)))
+
+
+#Here we just add the p-values as the upper triangle of the effect size table
+pls_comparison_matrix_Z[upper.tri(pls_comparison_matrix_Z)]<- pls_comparison_matrix_P[upper.tri(pls_comparison_matrix_P, diag=FALSE)]
+
+write.csv (pls_comparison_matrix_Z,file="../Data/Results/integration_strength_comparisons.csv")
+
+
+#manual checks
+# rostrum_molar <- phylo.integration( rostrum, molar, phy = aus.tree)
+# orbital_vault <- phylo.integration(orbital,vault, phy = aus.tree)
+# vault_basicran <- phylo.integration( vault, basicran, phy = aus.tree)
+# 
+# testcompare <- compare.pls( rostrum_molar, orbital_vault, vault_basicran)
+# testcompare$pairwise.z
+# testcompare$pairwise.P
+# 
+# #effect sizes and p values differ depending on the order in which modules are input?
+# test4 <- phylo.integration(module_list$molar, module_list$rostrum, phy = aus.tree)
+# test5 <- phylo.integration(module_list$rostrum, module_list$molar, phy = aus.tree)
+# 
+# compare.pls(test4,test5)
+# 
+# #serious differences with rostrum and orbital
+# 
+# test5 <- phylo.integration(module_list$rostrum, module_list$orbital, phy = aus.tree)
+# test6 <- phylo.integration(module_list$orbital, module_list$rostrum, phy = aus.tree)
+# 
+# compare.pls(test5,test6)
+# 
+
+```
+
+
+#Test INTEGRATION strengths between full and residual datasets
+
+```{r}
+
+full_vs_res_int_strengths <- compare.pls( int.test.5.phy,int.test.5.res)
+
+```
+
+
+#test RESIDUALS INTEGRATION between pairs of modules; 
+
+```{r}
+
+basicran_res <- residuals[which(lm.modules[, 4] == "basicran"), ,]
+molar_res <- residuals[which(lm.modules[, 4] == "molar"), ,]
+orbital_res <- residuals[which(lm.modules[, 4] == "orbital"), ,]
+rostrum_res <- residuals[which(lm.modules[, 4] == "rostrum"), ,]
+vault_res <- residuals[which(lm.modules[, 4] == "vault"), ,]
+
+module_list_res <- list( basicran_res=basicran_res, molar_res=molar_res, orbital_res=orbital_res, rostrum_res=rostrum_res, vault_res=vault_res)
+
+
+#C#setting up the combinations to be analysed
+
+
+Combinations <- c( names(module_list_res), names(module_list_res) )
+Combinations <- unique( Combinations )
+Combinations <- combn( Combinations , 2 )
+
+
+#Make data frame
+Combination_matrix <- matrix(nrow=ncol(Combinations), ncol=nrow(Combinations)) 
+colnames(Combination_matrix) <- c("Rpls", "p")
+rownames(Combination_matrix) <- paste(Combinations[1,], Combinations[2,], sep=" x ")
+Combination_matrix <- as.data.frame(Combination_matrix)
+
+#an object to receive all comparisons
+
+integration_analyses_res <- vector("list", 10)
+
+
+
+for (i in 1:ncol(Combinations)){
+  
+temp <- phylo.integration(module_list_res[[which(names(module_list_res)== Combinations[1,i])]],
+                          module_list_res[[which(names(module_list_res)== Combinations[2,i])]],
+                          phy=aus.tree)
+
+integration_analyses_res[[i]]<- temp
+
+Combination_matrix$Rpls[i] <- temp$r.pls
+Combination_matrix$p [i] <- temp$P.value
+
+}
+
+
+#give integration analyses objects the appropriate names
+
+names(integration_analyses_res) <- paste(Combinations[1,], Combinations[2,], sep=" x ")
+
+#Now fix up table
+R_pls_matrix_res <- matrix( nrow=length(module_list), ncol=length(module_list))
+
+R_pls_matrix_res[lower.tri(R_pls_matrix_res)] <- round(Combination_matrix$p, 3)
+#again, somehow the order is wrong with the upper tri and I don't know how to fix it
+R_pls_matrix_res <- t(R_pls_matrix_res)
+R_pls_matrix_res[lower.tri(R_pls_matrix_res)] <- round(Combination_matrix$Rpls, 2)
+
+rownames(R_pls_matrix_res) <- names(module_list_res)
+colnames(R_pls_matrix_res) <- names(module_list_res)
+
+
+#note that the R-pls values should be the same as the overall integration output for residuals
+Integration_results; R_pls_matrix_res
+
+
+
+#manual tests to make sure the matrix reflects reality - it does
+
+phylo.integration(basicran_res, molar_res, phy=aus.tree)
+phylo.integration(rostrum_res, molar_res, phy=aus.tree)
+phylo.integration(molar_res, rostrum_res, phy=aus.tree)
+
+#Now create a matrix that asks if the levels of integration are significantly different using compare.pls
+
+#Create all combinations of modules
+
+Combinations_compare <- c( names(module_list_res), names(module_list_res) )
+Combinations_compare <- unique( Combinations_compare )
+Combinations_compare <- combn( Combinations_compare , 2 )
+
+
+
+#make empty list to receive integration analyses objects and name appropriately
+phylo_integration_list <- vector("list",ncol(Combinations_compare))
+names(phylo_integration_list) <- c( paste(Combinations_compare[1,], Combinations_compare[2,]))
+
+
+for (i in 1:ncol(Combinations_compare)){
+  
+phylo_integration_list [[i]] <- phylo.integration(module_list_res[[which(names(module_list_res)==Combinations_compare[2,i])]],
+                          module_list_res[[which(names(module_list_res)==Combinations_compare[1,i])]],
+                          phy=aus.tree, iter=1000)
+
+}
+
+pls_comparison_res <- compare.pls(phylo_integration_list)
+
+#then pull out results for just a matrix to present
+pls_comparison_matrix_P_res <- matrix(round(pls_comparison_res$pairwise.P,3), 
+                                nrow=ncol(Combinations_compare), 
+                                ncol=ncol(Combinations_compare), 
+                                dimnames=list(rownames(pls_comparison_res$pairwise.P), colnames(pls_comparison_res$pairwise.P)))
+
+pls_comparison_matrix_Z_res <- matrix(round(pls_comparison$pairwise.z, 3), 
+                                         nrow=ncol(Combinations_compare), 
+                                         ncol=ncol(Combinations_compare),
+                                         dimnames=list(rownames(pls_comparison_res$pairwise.P), colnames(pls_comparison_res$pairwise.P)))
+
+
+#Here we just add the p-values as the upper triangle of the effect size table
+pls_comparison_matrix_Z_res[upper.tri(pls_comparison_matrix_Z_res)]<- pls_comparison_matrix_P_res[upper.tri(pls_comparison_matrix_P_res, diag=FALSE)]
+
+write.csv (pls_comparison_matrix_Z,file="../Data/Results/integration_strength_comparisons_residuals.csv")
+
+```
+
+
+
+#test strength of INTEGRATION between full and residual partitions
+
+```{r}
+
+#quick check that all is well
+
+names(integration_analyses) == gsub("_res", "", names(integration_analyses_res))
+
+int_strength_full_vs_res <- vector("list", length(integration_analyses))
+names(int_strength_full_vs_res)<- names(integration_analyses)
+
+
+for (i in 1:length(integration_analyses)){
+  
+  int_strength_full_vs_res [[i]] <- compare.pls(integration_analyses[[i]], integration_analyses_res[[i]])
+  
+  
+}
+
+#Tabulate results - effect sizes, pairwise effect size differences, p values
+
+integration_strength_comparison_table_full_vs_res <- matrix (ncol = 4, nrow = length(integration_analyses), dimnames = list( names(integration_analyses), c("Z full", "Z residual", "Z difference", "p")))
+
+for(i in 1:length(integration_analyses)){
+  
+  #So pulling out all the values requires unlisting the pls results read-out for each comparison pair and turning it into a vector. You can find the relevant numbers by just going through the readout of one comparison pair.
+  integration_strength_comparison_table_full_vs_res[i,] <- as.vector(unlist(int_strength_full_vs_res[[i]])[c(1,2,6,10)])
+  
+  
+}
+
+#some post-processing rounding
+
+integration_strength_comparison_table_full_vs_res [,1:3] <- round (integration_strength_comparison_table_full_vs_res [,1:3], 2)
+integration_strength_comparison_table_full_vs_res [,4]  <- round (integration_strength_comparison_table_full_vs_res[,4], 3)
+
+write.csv(integration_strength_comparison_table_full_vs_res, file = "../Data/Results/integration_strength_comparison_table_full_vs_res.csv")
+
+#and because it is a lot of coding to get to this point, and a lot of potential for human error, here are  manual checks. 
+
+# rostrum_molar <- phylo.integration( molar, rostrum, phy = aus.tree)
+# orbital_vault <- phylo.integration(orbital,vault, phy = aus.tree)
+# vault_basicran <- phylo.integration( basicran, vault, phy = aus.tree)
+# 
+# rostrum_molar_res <- phylo.integration( molar_res, rostrum_res, phy = aus.tree)
+# orbital_vault_res <- phylo.integration(orbital_res,vault_res, phy = aus.tree)
+# vault_basicran_res <- phylo.integration( basicran_res, vault_res, phy = aus.tree)
+# 
+# compare.pls (rostrum_molar, rostrum_molar_res) #OK
+# compare.pls (orbital_vault, orbital_vault_res) #OK
+# compare.pls (vault_basicran, vault_basicran_res)#OK
+
+```
+
+
+## Test MODULARITY with 5 modules for full shape dataset
+This test uses covariance ratio (CR) coefficients (Adams 2016) to quantify the degree of modularity between hypothesized modules/partitions. The observed CR is compared to the distribution of randomized CR's, found by randomizing the landmarks into partitions of identical sample sizes. Accounts for random changes due to evolution via Brownian motion (Felice and Adams 2014). Modularity investigations only ask if significant modular structure is present given a specific hypothesis of modularity. Thus, unlike integraiton analyses, the CR values themselves are not tested statistically.
+```{r}
+#save time by pre-loaded file
+load(file = "../Data/Processed/06-modularity.rda")
+
+# Test with the phylogentic tree (and mean shapes)
+# mod.test.5.phy <- phylo.modularity(mean.shapes, partition.gp = lm.modules[, 4], phy=aus.tree)
+# mod.test.5.res <- phylo.modularity(residuals, partition.gp = lm.modules[, 4], phy=aus.tree)
+# Save time consuming tests
+# save(mod.test.5.phy, mod.test.5.res,  file = "../Data/Processed/06-modularity.rda")
+
+
+# Make pairwise comparison table
+mod.result.phy <- as.matrix(mod.test.5.phy$CR.mat)  # results
+colnames(mod.result.phy) <- unique(lm.modules[, 4])  # names from 1st instance
+rownames(mod.result.phy) <- unique(lm.modules[, 4])  # ...in lm.module[, 4]
+alpha.key <- match(unique(lm.modules[, 4]), mod.levels)  # alphabetize table
+mod.result.phy <- mod.result.phy[order(alpha.key), order(alpha.key)]  # alphabetize table
+
+
+# # Make pairwise comparison table for RESIDUALS
+mod.result.res <- as.matrix(mod.test.5.res$CR.mat)  # results
+
+colnames(mod.result.res) <- unique(lm.modules[, 4])  # names from 1st instance
+rownames(mod.result.res) <- unique(lm.modules[, 4])  # ...in lm.module[, 4]
+mod.result.res <- mod.result.res[order(alpha.key), order(alpha.key)]
+
+#phylo.modularity provides a pairwise table. Here, upper is residual data and lower is full data
+
+Modularity_matrix <- matrix(NA, nrow = nrow(mod.result.phy), ncol = nrow(mod.result.phy))
+
+Modularity_matrix[upper.tri(Modularity_matrix)]<- mod.result.res[upper.tri(mod.result.res, diag=FALSE)]
+
+Modularity_matrix[lower.tri(Modularity_matrix)]<- mod.result.phy[lower.tri(mod.result.phy, diag=FALSE)]
+
+rownames(Modularity_matrix)<- rownames(mod.result.phy)
+colnames(Modularity_matrix)<- colnames(mod.result.phy)
+
+diag(Modularity_matrix) <- n.num
+
+Modularity_matrix <- round(Modularity_matrix, 2)
+
+write.csv(Modularity_matrix, file="../Data/Results/modularity_pairwise.csv")
+
+```
+
+
+## Make and export Figure 4
+```{r}
+# Load png back in
+module.plot <- readPNG("../Data/Processed/modules.png")
+
+# Set up for export and for multiple panels
+pdf("../Data/Results/Figure4_Modularity.pdf")
+mat <- matrix(c(1, 1, 2, 3,4,5), 3, 2, byrow = TRUE)  # 3 plots, 2 row, 2 columns
+layout(mat, widths = rep.int(1, ncol(mat)), heights = rep.int(0.5, nrow(mat))) 
+
+# 1) Plot of modules
+par(mar = c(1, 1, 1, 1))  # sets the margins
+plot(c(0, dim(module.plot)[2]), c(0, dim(module.plot)[1]), type = "n", axes = FALSE, xlab = "", ylab = "", asp = TRUE)  # module.plot = png made above
+rasterImage(module.plot, 0, 0, dim(module.plot)[2], dim(module.plot)[1])
+# Labels for module plot
+legend("topleft", "a", cex = 1.5, bty = "n")
+legend("topleft", "module definitions (observed condition)", cex = 0.9, bty = "n", inset = c(0.05, 0.015))
+text(1200, -3, "Basicranium", bty = "n", col = darken(mod.colors[1]))
+text(600, 150, "Molar", bty = "n", col = mod.colors[2])
+text(600, 400, "Orbital", bty = "n", col = darken(mod.colors[3]))
+text(160, 200, "Rostrum", bty = "n", col = darken(mod.colors[4], amount = 0.3))
+text(1550,400, "Vault", bty = "n", col = darken(mod.colors[5], amount = 0.35))
+
+
+
+
+############Modularity
+
+#1 plot of observed and resampled CR coefficients (for full dataset/w phylocorrection)
+
+par(mar = c(3.5, 3.5, 1.5, 0.5))
+plot(density(mod.test.5.phy$random.CR),
+     main = "",
+     xlab = "",
+     xlim = c(0, 1),
+     ylim = c(0, 100),
+     ylab = "",
+     cex.axis = 0.9,
+     col = "black")
+
+title(xlab = "CR coefficient (low CR = high modularity)", line = 2.4)
+title(ylab = "Density", line = 2.35)
+arrows(x0 = mod.test.5.phy$CR, y0 = 30, y1 = 0, length = 0.15, lwd = 1.5, col = "darkred")
+text(mod.test.5.phy$CR , 35, paste( "observed: ", round(mod.test.5.phy$CR, 2)), cex = 0.9, col = "darkred")
+legend("topleft", "b", cex = 1.5, bty = "n", inset = -0.05)
+legend("topleft", "full shape", cex = 0.9, bty = "n", inset = c(0.06, 0))
+
+# 2) Plot of pls coefficients (w/ phylo correction) for shape residual dataset
+par(mar = c(3.5, 3.5, 1.5, 0.5))
+plot(density(mod.test.5.res$random.CR),
+     main = "",
+     xlab = "",
+     xlim = c(0, 1),
+     ylim = c(0, 100),
+     ylab = "",
+     cex.axis = 0.9,
+     col = "black")
+# Labels for histogram
+title(xlab = "CR coefficient (low CR = high modularity)", line = 2.4)
+
+arrows(x0 = mod.test.5.res$CR, y0 = 30, y1 = 0, length = 0.15, lwd = 1.5, col = "darkred")
+text(mod.test.5.res$CR , 35, paste("observed: ", round(mod.test.5.res$CR, 2)), cex = 0.9, col = "darkred")
+legend("topleft", "c", cex = 1.5, bty = "n", inset = -0.05)
+legend("topleft", "shape residual", cex = 0.9, bty = "n", inset = c(0.07, 0))
+
+#Integration
+
+# 3) Plot of observed and resampled pls coefficients (w/ phylo correction)
+par(mar = c(3.5, 3.5, 1.5, 0.5))
+plot(density(int.test.5.phy$random.r),
+     main = "",
+     xlab = "",
+     xlim = c(0, 1),
+     ylim = c(0, 5),
+     ylab = "",
+     cex.axis = 0.9,
+     col = "black")
+title(xlab = "PLS coefficient (low PLS = low integration))", line = 2.4)
+title(ylab = "Density", line = 2.35)
+arrows(x0 = int.test.5.phy$r.pls, y0 = 1.5, y1 = 0, length = 0.15, lwd = 1.5, col = "darkred")
+text(int.test.5.phy$r.pls , 2.1, paste( "observed: ", round(int.test.5.phy$r.pls, 2)), cex = 0.9, col = "darkred")
+legend("topleft", "d", cex = 1.5, bty = "n", inset = -0.05)
+legend("topleft", "full shape", cex = 0.9, bty = "n", inset = c(0.06, 0))
+
+# 4) Plot of pls coefficients (w/ phylo correction) for shape residual dataset
+par(mar = c(3.5, 3.5, 1.5, 0.5))
+plot(density(int.test.5.res$random.r),
+     main = "",
+     xlab = "",
+     xlim = c(0, 1),
+     ylim = c(0, 5),
+     ylab = "",
+     cex.axis = 0.9,
+     col = "black")
+# Labels for histogram
+title(xlab = "PLS coefficient (low PLS = low integration)", line = 2.4)
+
+arrows(x0 = int.test.5.res$r.pls, y0 = 1.5, y1 = 0, length = 0.15, lwd = 1.5, col = "darkred")
+text(int.test.5.res$r.pls , 2.1, paste("observed: ", round(int.test.5.res$r.pls, 2)), cex = 0.9, col = "darkred")
+legend("topleft", "e", cex = 1.5, bty = "n", inset = -0.05)
+legend("topleft", "shape residual", cex = 0.9, bty = "n", inset = c(0.07, 0))
+
+
+dev.off()
+```
+
+## Mantel Test to see if PCs of modules are equivalent
+Uses method similar to workflow from Heatherington and Sherratt 2015 DOI: https://doi.org/10.1111/pala.12159
+```{r}
+# Define (admittably brute force) function to run Mantel test on 5 modules named as in Figure 4A. Takes in a shape dataset and landmark definitions of modules made earlier in the script.
+MantelModularity <- function(shapes, lm.modules) { 
+  # Separate modules - using 5-module framework 
+  mod.1 <- shapes[which(lm.modules[, 4] == "basicran"), ,]
+  mod.2 <- shapes[which(lm.modules[, 4] == "molar"), ,]
+  mod.3 <- shapes[which(lm.modules[, 4] == "orbital"), ,]
+  mod.4 <- shapes[which(lm.modules[, 4] == "rostrum"), ,]
+  mod.5 <- shapes[which(lm.modules[, 4] == "vault"), ,]
+  
+  # Run PCAs
+  PCA.1 <- gm.prcomp(mod.1)
+  PCA.2 <- gm.prcomp(mod.2)
+  PCA.3 <- gm.prcomp(mod.3)
+  PCA.4 <- gm.prcomp(mod.4)
+  PCA.5 <- gm.prcomp(mod.5)
+
+  # Make distance matrices
+  d.PCA.1 <- dist(PCA.1$x)
+  d.PCA.2 <- dist(PCA.2$x)
+  d.PCA.3 <- dist(PCA.3$x)
+  d.PCA.4 <- dist(PCA.4$x)
+  d.PCA.5 <- dist(PCA.5$x)
+  
+  # Run Mantel tests
+  m.1v2 <- mantel(d.PCA.1, d.PCA.2, method = "pearson", permutations = 1000) 
+  m.1v3 <- mantel(d.PCA.1, d.PCA.3, method = "pearson", permutations = 1000)
+  m.1v4 <- mantel(d.PCA.1, d.PCA.4, method = "pearson", permutations = 1000)
+  m.1v5 <- mantel(d.PCA.1, d.PCA.5, method = "pearson", permutations = 1000)
+
+  m.2v3 <- mantel(d.PCA.2, d.PCA.3, method = "pearson", permutations = 1000) 
+  m.2v4 <- mantel(d.PCA.2, d.PCA.4, method = "pearson", permutations = 1000)
+  m.2v5 <- mantel(d.PCA.2, d.PCA.5, method = "pearson", permutations = 1000)
+
+  m.3v4 <- mantel(d.PCA.3, d.PCA.4, method = "pearson", permutations = 1000)
+  m.3v5 <- mantel(d.PCA.3, d.PCA.5, method = "pearson", permutations = 1000)
+
+  m.4v5 <- mantel(d.PCA.4, d.PCA.5, method = "pearson", permutations = 1000)
+  
+  # Bonferroni correction
+  p.vals.bon <- round(p.adjust(c(m.1v2$signif, m.1v3$signif, m.1v4$signif, m.1v5$signif, m.2v3$signif, m.2v4$signif, m.2v5$signif, m.3v4$signif, m.3v5$signif, m.4v5$signif), method = "bonferroni"), 3)
+  
+  # Make results table columns
+  col1 <- c("-", p.vals.bon[1], p.vals.bon[2], p.vals.bon[3], p.vals.bon[4])
+  col2 <- c(round(m.1v2$statistic, 3), "-", p.vals.bon[5], p.vals.bon[6], p.vals.bon[7])
+  col3 <- c(round(m.1v3$statistic, 3), round(m.2v3$statistic, 3), "-", p.vals.bon[8], p.vals.bon[9])
+  col4 <- c(round(m.1v4$statistic, 3), round(m.2v4$statistic, 3), round(m.3v4$statistic, 3), "-", p.vals.bon[10])
+  col5 <- c(round(m.1v5$statistic, 3), round(m.2v5$statistic, 3), round(m.3v5$statistic, 3), round(m.4v5$statistic, 3), "-")
+
+  # Combine columns into table
+  modules <- sort(unique(as.factor(lm.modules[, 4])))
+  mantel.results <- data.table(Modules = modules, basicranium = col1, molar = col2, orbital = col3, rostrum = col4, vault = col5)
+  
+  return(mantel.results)
+  }
+
+# Run on the full and shape residual datasets respectively. This outputs a weird data table format that then needs to be turned into a matrix for upper/lower triangle extraction
+mantel.full <- MantelModularity(mean.shapes, lm.modules)
+mantel.res <- MantelModularity(residuals, lm.modules)
+
+#this screams at you but just because of the NAs. the values are fine. Annoyingly, it also cancels the running of the whole chunk!
+mantel.full <- apply(as.matrix.noquote(mantel.full[,2:6]),2,as.numeric)
+
+mantel.res <- apply(as.matrix.noquote(mantel.res[,2:6]),2,as.numeric)
+
+# Add landmark numbers; col #4 gives the Goswami module definitions
+ n.num <- c(sum(lm.modules[, 4] == "basicran"), sum(lm.modules[, 4] == "molar"), sum(lm.modules[, 4] == "orbital"), sum(lm.modules[, 4] == "rostrum"), sum(lm.modules[, 4] == "vault"))
+# mantel.full <- cbind(mantel.full, n.num)  # add to tables for export
+# mantel.res <- cbind(mantel.res, n.num)
+
+
+```
+
+Turn the above into a table . This is a really nifty way of combining upper and lower triangles
+```{r}
+
+Mantel_matrix <- matrix(NA, nrow = length(mod.levels), ncol = length(mod.levels))
+#         
+Mantel_matrix[upper.tri(Mantel_matrix)]<- mantel.res[upper.tri(mantel.full, diag=FALSE)]
+# Here we have to flip the second matrix by transposing (t(mantel.res)) because the values are originally on the upper diagonal 
+Mantel_matrix[lower.tri(Mantel_matrix)]<- t(mantel.full)[(lower.tri(t(mantel.res), diag=FALSE))]
+
+diag(Mantel_matrix)<- n.num
+                     
+ rownames(Mantel_matrix)<- mod.levels
+ colnames(Mantel_matrix)<- mod.levels
+
+write.csv(Mantel_matrix, file="../Data/Results/Mantel_results.csv")
+
+```
+
+
+
+### Run global integration tests and make Supplementary Figure 3
+Test whether rodent skull is integrated as a whole
+```{r}
+pdf("../Data/Results/SFigure3_GItests.pdf")
+mat <- matrix(c(1:2), 1, 2, byrow = TRUE)  # 2 plots, 1 rows, 2 columns
+layout(mat, widths = rep(1, dim(mat)[2]), heights = rep(0.5, dim(mat)[1]))   
+
+# A) Full shape test
+par(mar = c(4.5, 4.5, 2, 1))
+globalIntegration(mean.shapes, ShowPlot = TRUE)
+legend("bottomleft", "A", cex = 1.5, bty = 'n', inset = c(-0.15, 0))
+legend("bottomleft", "full shape", cex = 1, bty = 'n', inset = c(0, 0.012))
+
+# B) Residual test
+par(mar = c(4.5, 4.5, 2, 1))
+globalIntegration(residuals, ShowPlot = TRUE)
+legend("bottomleft", "B", cex = 1.5, bty = 'n', inset = c(-0.15, 0))
+legend("bottomleft", "shape residual", cex = 1, bty = 'n', inset = c(0, 0.012))
+
+dev.off()
+```

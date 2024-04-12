@@ -1,0 +1,117 @@
+---
+title: "02-calculate-user-error"
+author: "Ariel Marcy"
+date: "2018-09-26"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_knit$set(root.dir = '../eco-rodents')
+```
+
+# Calculate user error
+Geometric morphometrics usually requires a lot of user-generated data and it's important to assess how much user error is created during landmarking. 
+
+First, we visualize whether any outliers can be explained by mistakes in landmark placement (e.g. a point "falling through" the nasal to land on the inner basicranium). *This was already done for this dataset in allometry-rodents repo and associated paper.*
+
+Second, we compare the shape variation between 20 individuals, from a variety of different species, landmarked twice to calculate the intra-observer (i.e. digitizer) error.
+
+Third, we'll finalize the specimens to be included in future analyses.
+
+### Load packages, functions, and data from previous steps
+```{r message = FALSE}
+library(stringr)    # CRAN v1.5.0
+library(stringi)    # CRAN v1.7.12
+library(data.table) # CRAN v1.14.8
+library(geomorph)   # CRAN v4.0.6
+
+# This sets the wd to local
+library(rstudioapi) # Safely Access the RStudio API
+setwd(dirname(getActiveDocumentContext()$path))
+
+source("../Functions/utilities.R")  # custom functions
+load(file = "../Data/Processed/01-bilat-data-w-ERR.rda")
+```
+
+## 1) Check for outliers and fix landmarking errors
+Done in previous manuscript (see [allometry-rodents repo](https://github.com/miracleray/allometry-rodents))
+
+### Remove outliers from dataset
+Three specimens had major landmarking errors -- landmarks consistently placed in the wrong places. Therefore, we opted to remove these specimens.
+```{r}
+# Find indices (same for both big and small datasets)
+rat.out <- which(sm.sp.info$CatNum == "C11381")  # Rattus norvegicus
+uro.out <- which(sm.sp.info$CatNum == "J17610")  # Uromys caudimaculatus
+
+# Remove from both big and small datasets
+sm.sp.info <- sm.sp.info[-c(rat.out, uro.out), ]  # metadata
+big.sp.info <- big.sp.info[-c(rat.out, uro.out), ]
+sm.bY.shape <- sm.bY.shape[, , -c(rat.out, uro.out)]  # shape data
+big.bY.shape <- big.bY.shape[, , -c(rat.out, uro.out)]
+
+#now for the modules
+
+for (i in 1:length(module_list)){
+  
+  module_shape[[i]]$shape<-module_shape[[i]]$shape[,,-c(rat.out, uro.out) ]
+  module_shape[[i]]$csize <- module_shape[[i]]$csize[-c(rat.out, uro.out)]
+}
+
+```
+
+## 2) Calculate intra-observer error
+Now that the shape data have been processed via GPA + bilateral symmetry and corrected for obvious landmarking errors, we can separate the data intended to measure user error from the main data for the remaining analyses. 
+
+### Make the datasets to be used for the rest of the analyses.
+```{r}
+main <- which(big.sp.info$Rep == "non")  # this vector of non-replicate indices is the same for big and small patch protocols, tested with all.equal()
+
+big.shape <- big.bY.shape[, , main]  # big patch
+big.info <- big.sp.info[main, ]
+
+sm.shape <- sm.bY.shape[, , main]  # small patch
+sm.info <- sm.sp.info[main, ]
+
+
+#now for the modules
+
+for (i in 1:length(module_list)){
+  
+  module_shape[[i]]$shape<-module_shape[[i]]$shape[,,main ]
+  module_shape[[i]]$csize <- module_shape[[i]]$csize[main]
+}
+
+
+
+```
+
+### Create error measurement datasets for each protocol 
+Includes replicates and the specimens they duplicated (i.e. each CatNum should have two entries, one labeled "ERR", and one labled "non").
+```{r}
+# Find index for both versions of specimens with replicates using rep.spec list made in script 01
+rep.CatNums <- as.character(str_sub(rep.spec, 9, -1))  # isolate CatNum
+error.data <- which(sm.sp.info$CatNum %in% rep.CatNums)  # error.data is the same for small and big patch protocols, tested with all.equal()
+
+# Subset shape and metadata tables for each protcol
+big.err.shape <- big.bY.shape[, , error.data]
+big.err.info <- big.sp.info[error.data, ]
+
+sm.err.shape <- sm.bY.shape[, , error.data]
+sm.err.info <- sm.sp.info[error.data, ]
+```
+
+### Calculate user error aka Repeatability
+Calculated for each patch protocol from formulas 1-3 in Fruciano 2016. Custom function, `RepAbility()` was modified from Marcy et al. 2018.
+```{r}
+# n.rep = 2 in this case because we measured each specimen twice
+RepAbility(big.err.shape, big.err.info$CatNum, n.Rep = 2)  
+RepAbility(sm.err.shape, sm.err.info$CatNum, n.Rep = 2)
+```
+
+### Save intermediate data 
+Main datasets for both protocols without replicates.
+```{r}
+save(sm.shape, sm.info, sm.pt.names, module_shape, module_list, file = "../Data/Processed/02-no-error-data-sm.rda")
+save(big.shape, big.info, big.pt.names, file = "../Data/Processed/02-no-error-data-big.rda")
+```
