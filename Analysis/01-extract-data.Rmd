@@ -135,15 +135,7 @@ u.pt.names<- unique(no.XYZ)  # returns unique point and curve names
 
 ### Split shape dataset into separate big and small patch datasets
 ```{r}
-# Create data for big patch protocol
-big.data <- sp.info$Patch == "big"
-big.pts <- which(!str_detect(u.pt.names, "PAT2") & !str_detect(u.pt.names, "SUR2"))  # gets rid of columns left empty for small patch coordinates
-B <- A[big.pts, , big.data]
-big.sp.info <- sp.info[big.data, ]
-big.sp.info$Order <- c(1:nrow(big.sp.info))  # completes big patch dataset
-big.pt.names <- u.pt.names[big.pts]  # creates table of unique point names
 
-# Create data for small patch protocol
 sm.data <- sp.info$Patch == "small"
 sm.pts <- which(!str_detect(u.pt.names, "PAT D"))  # gets rid of big patch LMs
 S <- A[sm.pts, , sm.data]
@@ -155,7 +147,6 @@ sm.pt.names <- u.pt.names[sm.pts]  # creates table of unique point names
 ## Run GPA and bilateral symmetry
 Because we already slid our curve and patch semi-landmarks in Viewbox, we pass their coordinates to _geomorph_ as if they are fixed landmarks. This avoids "over-sliding" the shape data. 
 ```{r}
-big.Y <- gpagen(B, Proj = TRUE, ProcD = TRUE)
 sm.Y <- gpagen(S, Proj = TRUE, ProcD = TRUE)
 ```
 
@@ -163,7 +154,7 @@ sm.Y <- gpagen(S, Proj = TRUE, ProcD = TRUE)
 ### Add centroid size to metadata
 Simply join the centroid size given by `gpagen()` to the metadata table for each dataset. These data will be used later to quantify allometry.
 ```{r}
-big.sp.info$Csize <- unname(big.Y$Csize)
+
 sm.sp.info$Csize <- unname(sm.Y$Csize)
 ```
 
@@ -180,7 +171,6 @@ _For example, "SUR occipital suture R 2" is anterior to "SUR occipital suture R 
 
 _For example, "PAT auditory bulla R 3" and "PAT auditory bulla L 3" are in mirror image locations on their respective patches_
 ```{r}
-big.land.pairs <- FindPairs(big.pt.names)
 sm.land.pairs <- FindPairs(sm.pt.names)
 ```
 
@@ -191,31 +181,14 @@ The two bilateral GPAs can take some time (~20min total to run).
 
 WARNING: the `bilat.symmetry()` function will change the order of specimens in the shape file IF you have any non-unique names in the vector given to argument `ind =` of `bilat.symmetry()`. For example, if we had used `$CatNum`, then we would have 2 of the same CatNums for specimens with replicates. To avoid this, have a column for Replicate Status ("Rep" in this script), merge this with the CatNum column and any other columns of interest, and use this `$All` column for the `ind =` argument of `bilat.symmetry()`.
 ```{r}
-# Perform bilateral procrustes alignment on each patch protocol
-big.biY <- bilat.symmetry(big.Y$coords, ind = big.sp.info$All, object.sym = TRUE, replicate = NULL, side = NULL, land.pairs = big.land.pairs)
-
-big.Y$coords
-
-# Extract symmetric component of shape data
-big.bY.shape <- big.biY$symm.shape  # analogous to Y$coords, where Y is the output of gpagen()
 
 # Repeat 2 steps above for small patch protocol
 sm.biY <- bilat.symmetry(sm.Y$coords, ind = sm.sp.info$All, object.sym = TRUE, replicate = NULL, side = NULL, land.pairs = sm.land.pairs)
 sm.bY.shape <- sm.biY$symm.shape
 ```
 
-## Summarize results from bilateral symmetry analyses
-The bilateral results may be relevant for researchers interested in how much variation can be explained by symmetric variation among specimens, asymmetric variation among specimens, and fluctating asymmetry within specimens. 
-```{r}
-summary(big.biY)  # big patch protocol
-summary(sm.biY) # small patch protocol
-```
-Interestingly, we observe that the big patch protocol has elevated asymmetry relative to the small patch protocol (side Rsq = .11 vs .04, respectively). We suspect this is because it was impossible to get a perfectly mirror-image-matched large patch on the dorsal surface of the skull in Viewbox. Perhaps this asymmetry, hard-coded into the patch protocol, contributed to an increase in asymmetry measured compared to the small patch protocol. The small patch protocol had fewer patch points and it was easier to make mirror-image small patches.
 
-
-
-#run separate GPAs for each module - using the small patch protocol on which this paper is based
-
+#run separate GPAs for each module 
 ```{r}
 lm.modules <- read.csv("../Data/Processed/Landmark_modules.csv", sep = ",", header = TRUE)
 
@@ -225,8 +198,8 @@ orbital <- S[which(lm.modules[, 4] == "orbital"), ,]
 rostrum <- S[which(lm.modules[, 4] == "rostrum"), ,]
 vault <- S[which(lm.modules[, 4] == "vault"), ,]
 
-#And a vector that is repeatedly called to make sure the order is always the same
-module_list<- list(basicran=NULL, molar=NULL, orbital=NULL, rostrum=NULL, vault=NULL)
+#And a list that is repeatedly called to make sure the order is always the same
+empty_module_list<- list(basicran=NULL, molar=NULL, orbital=NULL, rostrum=NULL, vault=NULL)
 
 #check these are correct
 #Pick a random specimen just for plotting
@@ -254,10 +227,10 @@ for(i in 1:length(mod.levels)) {
 #now run separate GPAs for each module, make sure they are the same order
 
 modules <- list( basicran=basicran, molar=molar, orbital=orbital, rostrum=rostrum, vault=vault)
-names(modules)== names(module_list)
+names(modules)== names(empty_module_list)
 
 #list for gpas, overwriting the raw data list
-module_gpas <- module_list
+module_gpas <- empty_module_list
 
 for (i in 1:length(module_gpas)){
   
@@ -267,7 +240,7 @@ module_gpas[[i]] <- gpagen(modules[[i]],Proj = TRUE, ProcD = TRUE)
 
 #pull out centroid sizes for later allometry analyses
 
-module_csizes <- module_list
+module_csizes <- empty_module_list
 
 for (i in 1:length(module_gpas)){
   
@@ -280,7 +253,7 @@ for (i in 1:length(module_gpas)){
 
 #Get unique names for bilateral symmetry analyses, using Ariel's find.pairs function
 
-module_pairs <- module_list
+module_pairs <- empty_module_list
 
 for (i in 1:length(module_gpas)){
   
@@ -293,7 +266,7 @@ module_pairs [[i]] <- FindPairs(sm.pt.names[mod.parts[[i]]])
 #as.character (sm.sp.info$All) == sub("_small", "",  as.character(dimnames(sm.Y$coords)[[3]]))
 
 
-module_bilat <- module_list
+module_bilat <- empty_module_list
 
 for (i in 1:length(module_gpas)){
   
@@ -302,7 +275,7 @@ module_bilat [[i]] <- bilat.symmetry(module_gpas[[i]]$coords, ind = sub("_small"
 }
 
 #Add Csizes to module_bilat 
-module_shape <- module_list
+module_shape <- empty_module_list
 #module_shape_content <- list(shape=NULL, csize=NULL)
 
 for (i in 1:length(module_shape)){
@@ -323,8 +296,8 @@ dimnames (module_shape$basicran$shape)[[3]] == names(module_shape$vault$csize)
 
 
 ### Save intermediate data
-Now that we have extracted the 2 patch protocol datasets and the specimen metadata, we are ready for the next analysis step: 02-calculate-user-error.Rmd. Here we save the R objects we will need for later steps so this script does not have to be run again.
+Now that we have extracted the  datasets and the specimen metadata, we are ready for the next analysis step: 02-calculate-user-error.Rmd. Here we save the R objects we will need for later steps so this script does not have to be run again.
 ```{r}
-save(big.bY.shape, big.sp.info, sm.bY.shape, sm.sp.info, rep.spec, big.pt.names, sm.pt.names, module_shape, file = "../Data/Processed/01-bilat-data-w-ERR.rda")
-save(B, S, big.pt.names, sm.pt.names, big.sp.info, sm.sp.info, rep.spec, file = "../Data/Processed/01-data-for-appendix.rda")
+save(sm.bY.shape, sm.sp.info, rep.spec,sm.pt.names, empty_module_list, module_shape, file = "../Data/Processed/01-bilat-data-w-ERR.rda")
+
 ```
