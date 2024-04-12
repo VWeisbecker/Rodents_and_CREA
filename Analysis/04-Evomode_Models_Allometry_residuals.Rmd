@@ -47,7 +47,7 @@ load(file = "../Data/Processed/03-graphing-vectors.rda")
 #which model of evolution does shape follow? Using Julien Clavel's mvMorph package
 
 ```{r}
-load(file="../Data/Processed/Shape_evo_modes.rda")
+#load(file="../Data/Processed/Shape_evo_modes.rda")
 #Fitting different evolutionary models to the shape data and tabulating the GICs. The BM analysis takes 5 minutes, the other two take longer - looking at nearly 30 minutes of computing time!
 
 two_d_array <- list( array2d=two.d.array(mean.shapes))
@@ -56,14 +56,10 @@ two_d_array <- list( array2d=two.d.array(mean.shapes))
 
 dimnames(two_d_array$array2d)[[1]] == aus.tree$tip.label
 
-
-
-
-
-# BM_shapefit <- mvgls(array2d ~ 1 , aus.tree, data = two_d_array, model="BM" , method="PL-LOOCV")
-# OU_shapefit <- mvgls(array2d ~ 1 , aus.tree, data = two_d_array, model="OU" , method="PL-LOOCV")
-# EB_shapefit <- mvgls(array2d ~ 1 , aus.tree, data = two_d_array, model="EB" , method="PL-LOOCV")
-# save(BM_shapefit,OU_shapefit,EB_shapefit, file="../Data/Processed/Shape_evo_modes.rda")
+BM_shapefit <- mvgls(array2d ~ 1 , aus.tree, data = two_d_array, model="BM" , method="PL-LOOCV")
+OU_shapefit <- mvgls(array2d ~ 1 , aus.tree, data = two_d_array, model="OU" , method="PL-LOOCV")
+EB_shapefit <- mvgls(array2d ~ 1 , aus.tree, data = two_d_array, model="EB" , method="PL-LOOCV")
+save(BM_shapefit,OU_shapefit,EB_shapefit, file="../Data/Processed/Shape_evo_modes.rda")
 
 GIC_BM<- GIC(BM_shapefit)
 GIC_OU <- GIC(OU_shapefit)
@@ -84,33 +80,6 @@ GICmin=GICs-min(GICs)
   #OU is by far the preferred model
   W_shape 
 
-#or use the evidence ratio computed in the qprc package
-
-Evidence_ratios <- c(evidence(GICs[1], GICs[2]), evidence(GICs[1], GICs[3]), evidence(GICs[2], GICs[3]))
-
-names(Evidence_ratios)<- c("BM_OU", "BM_EB", "OU_EB")
-
-#" If large, first model is better. If small, second model is better. "
-#OU is also better here - infinitely better than EB by the looks of it!
-
-Evidence_ratios
-  
-
-
-#How strong is the OU process - is it OK to use BM for analyses? Using reasoning and workflow from Artuso et al. 2022:
-#For those modules following an OU process, we calculated the “rate of adaptation” parameter, α, and its associated “phylogenetic half-life” (t1/2), as given by the formula (Hansen 1997, 2014): t1/2 = ln2/α, assuming a tree height of about 11.5 million years (Myr), based on the crown age of Clade A (Gamisch et al. 2021; see also Fig. S1). Phylogenetic half-lives are usually interpreted as the average time it takes a species to evolve halfway from its ancestral state (here: module shape) toward the optimum (see also Artuso et al. 2021), thereby indicating the strength of the OU process acting on the species. When α is zero and/or t1/2 is larger relative to tree height, the OU model collapses to the BM model (Beaulieu et al. 2012; Cooper et al. 2016).
-
-#This is alpha (based on summary(OU_shapefit)) - it is 0.13
-alpha <- OU_shapefit$opt$par[2]
-
-#The deepest node is 37 but t1/2 is calculated as 5.28, so the OU model is not particularly BM-like 
-max(node.depth(aus.tree))
-
-log(2)/alpha
-
-#But with small sample sizes, Type I error rates are high and common likelihood tests such as AIC can be biased (cooper et al. 2016)
-
-
 #Does it make much of a difference to the coordinates if we adjust for OU vs BM evolution? 
 
 #trying to do what I would usually do if I ran pgls:
@@ -124,6 +93,7 @@ two.b.pls(resid_BM, resid_OU)
 
 ```
 
+#Preparing centroid size evolutionary mode model
 ```{r}
 #the tests and below phytools tests needs names with the data so pulling them out just here
 Csizes_fit <- info.means$MeanCsize
@@ -143,7 +113,6 @@ Now fitting a model just for size, using Phytools
 
 sizeBM<-fitContinuous(aus.tree,log(Csizes_fit), model="BM")
 sizeOU<-fitContinuous(aus.tree,log(Csizes_fit),model="OU")
-#EB gives a warning message?
 sizeEB<-fitContinuous(aus.tree,log(Csizes_fit),model="EB")
 
 #Compute vector of GICs - this also takes a little, ~1 minute
@@ -163,7 +132,7 @@ AICmin=AICs-min(AICs)
 
 #allometry
 ```{r}
-load(file="../Data/Processed/Allom_evo_modes.rda")
+#load(file="../Data/Processed/Allom_evo_modes.rda")
 
 #a paranoid check - don't judge me, I have ADHD :-D
 names(Csizes_fit)==dimnames(two_d_array$array2d)[[1]]
@@ -173,10 +142,10 @@ names(Csizes_fit)==aus.tree$tip.label
 
 #or re-compute, the below also takes ~30 minutes on my fasted computer
 
-# BM_allomfit <- mvgls(array2d ~ log(Csizes_fit), aus.tree, data = two_d_array, model="BM" , method="PL-LOOCV")
-# OU_allomfit <- mvgls(array2d ~ log(Csizes_fit), aus.tree, data = two_d_array, model="OU" , method="PL-LOOCV")
-# EB_allomfit <- mvgls(array2d ~ log(Csizes_fit), aus.tree, data = two_d_array, model="EB" , method="PL-LOOCV")
-# save(BM_allomfit,OU_allomfit,EB_allomfit, file="../Data/Processed/Allom_evo_modes.rda")
+BM_allomfit <- mvgls(array2d ~ log(Csizes_fit), aus.tree, data = two_d_array, model="BM" , method="PL-LOOCV")
+OU_allomfit <- mvgls(array2d ~ log(Csizes_fit), aus.tree, data = two_d_array, model="OU" , method="PL-LOOCV")
+EB_allomfit <- mvgls(array2d ~ log(Csizes_fit), aus.tree, data = two_d_array, model="EB" , method="PL-LOOCV")
+save(BM_allomfit,OU_allomfit,EB_allomfit, file="../Data/Processed/Allom_evo_modes.rda")
 
 GIC_BM<- GIC(BM_allomfit)
 GIC_OU <- GIC(OU_allomfit)
@@ -198,40 +167,28 @@ GICmin=GICs-min(GICs)
 #OU is also strongly preferred here.
   W_allom 
 
-#or use the evidence ratio computed in the qprc package
-
-Evidence_ratios <- c(evidence(GICs[1], GICs[2]), evidence(GICs[1], GICs[3]), evidence(GICs[2], GICs[3]))
-
-names(Evidence_ratios)<- c("BM_OU", "BM_EB", "OU_EB")
-
-#" If large, first model is better. If small, second model is better. "
-
-Evidence_ratios
-
-#Alpha  
-OU_allomfit$opt$par[2]
 
 
 ```
 #also checks of evolutionary modes of residuals of the best-fitting (OU) model
 ```{r}
 
-load(file="../Data/Processed/Res_evo_modes.rda")
+#load(file="../Data/Processed/Res_evo_modes.rda")
 
  
 # 
 # #A little check that things line up: 
 # 
- # dimnames(OU_allomfit$residuals)[[1]] == aus.tree$tip.label
+dimnames(OU_allomfit$residuals)[[1]] == aus.tree$tip.label
 # 
-#array2d_res <- OU_allomfit$residuals
+array2d_res <- OU_allomfit$residuals
 # 
 # 
 # 
-# BM_resfit <- mvgls(array2d_res ~ 1, aus.tree, data = two_d_array, model="BM" , method="PL-LOOCV")
-# OU_resfit <- mvgls(array2d_res ~ 1, aus.tree, data = two_d_array, model="OU" , method="PL-LOOCV")
-# EB_resfit <- mvgls(array2d_res ~ 1, aus.tree, data = two_d_array, model="EB" , method="PL-LOOCV")
-# save(BM_resfit,OU_resfit,EB_resfit, file="../Data/Processed/Res_evo_modes.rda")
+BM_resfit <- mvgls(array2d_res ~ 1, aus.tree, data = two_d_array, model="BM" , method="PL-LOOCV")
+OU_resfit <- mvgls(array2d_res ~ 1, aus.tree, data = two_d_array, model="OU" , method="PL-LOOCV")
+EB_resfit <- mvgls(array2d_res ~ 1, aus.tree, data = two_d_array, model="EB" , method="PL-LOOCV")
+save(BM_resfit,OU_resfit,EB_resfit, file="../Data/Processed/Res_evo_modes.rda")
 
 GIC_BM<- GIC(BM_resfit)
 GIC_OU <- GIC(OU_resfit)
@@ -252,8 +209,6 @@ GICmin=GICs-min(GICs)
 
 
   W_res 
-
-
 
 
 ```
