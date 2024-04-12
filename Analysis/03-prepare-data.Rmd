@@ -69,7 +69,7 @@ dimnames(shape)[[3]] == dimnames(module_shape$molar$shape)[[3]]
 
 dimnames(shape)[[3]] <- as.list(paste(info$FullName))
 
-for (i in length(module_list)){
+for (i in length(empty_module_list)){
   
   dimnames(module_shape[[i]]$shape)[[3]] <- as.list(paste(info$FullName))
   names(module_shape[[i]]$csize) <- as.list(paste(info$FullName))
@@ -164,9 +164,9 @@ mean.shapes <- arrayspecs(mean.shapes.2D, 325, 3)  # convert to 3D array with 32
 
 #Now same thing but a nested loop for the modules
 mean_module_shapes_2D <- NULL
-Mean_module_shapes <- module_list
+Mean_module_shapes <- empty_module_list
 
-for (i in 1:length(module_list)){
+for (i in 1:length(empty_module_list)){
   
   for (j in 1:length(full.names)) {  
     
@@ -186,15 +186,15 @@ for (i in 1:length(module_list)){
 #some checks - the r-pls values of the separately gpa'ed modules and the equivalent partition in the whole-shape gpa should be very high
 
 ```{r}
-
+# 
 # lm.modules <- read.csv("../Data/Processed/Landmark_modules.csv", sep = ",", header = TRUE)
 # mean_full_gpa_partitions <- list( basicran = mean.shapes[which(lm.modules[, 4] == "basicran"), ,], molar = mean.shapes[which(lm.modules[, 4] == "molar"), ,], orbital = mean.shapes[which(lm.modules[, 4] == "orbital"), ,], rostrum = mean.shapes[which(lm.modules[, 4] == "rostrum"), ,], vault = mean.shapes[which(lm.modules[, 4] == "vault"), ,])
 # 
 # names(mean_full_gpa_partitions) == names(Mean_module_shapes)
 # 
 # for (i in 1: length(names(Mean_module_shapes)) ){
-#   
-#   
+# 
+# 
 #  print( integration.test(mean_full_gpa_partitions[[i]], Mean_module_shapes[[i]])$r.pls)
 # 
 # }
@@ -253,7 +253,7 @@ info.means$MeanCsize <- cs.means[, 2]  # store CS in dataframe
 
 #for modules. This aggregates the csizes that stayed associated with each module above (in the module_shape object). Note that the aggregate function spits out a taxon name column and the actual size values, hance [,2] above and $x below
 
-mean_modules_shapesize <- module_list
+mean_modules_shapesize <- empty_module_list
 
 for (i in 1: length(names(Mean_module_shapes)) ){
   
@@ -359,9 +359,9 @@ info.means.tree <- info.means[!is.element(info.means$FullName, to.remove$data_no
 mean.shapes.tree <- mean.shapes[, , !is.element(info.means$FullName, to.remove$data_not_tree)]  # shape data
 
 #for the modules:
-module_sizeshape_tree <- module_list
+module_sizeshape_tree <- empty_module_list
 
-for (i in 1:length(module_list)){
+for (i in 1:length(empty_module_list)){
 
 module_sizeshape_tree[[i]]$shape <- mean_modules_shapesize[[i]]$shape[, , !is.element(info.means$FullName, to.remove$data_not_tree)]  # shape data    
 module_sizeshape_tree[[i]]$csize <- mean_modules_shapesize[[i]]$csize[!is.element(info.means$FullName, to.remove$data_not_tree)]  # csize
@@ -375,7 +375,7 @@ mean.shapes <- mean.shapes.tree[, , tree.order]  # shape data
 
 #for the modules. Again, the csize is just a vector here 
 
-for (i in 1:length(module_list)){
+for (i in 1:length(empty_module_list)){
 
 module_sizeshape_tree[[i]]$shape <- mean_modules_shapesize[[i]]$shape[, , tree.order] # shape data    
 module_sizeshape_tree[[i]]$csize <- mean_modules_shapesize[[i]]$csize[tree.order] #csize 
