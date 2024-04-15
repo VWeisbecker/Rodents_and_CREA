@@ -122,14 +122,14 @@ vault <- mean.shapes[which(lm.modules[, 4] == "vault"), ,]
 
 module_list <- list( basicran=basicran, molar=molar, orbital=orbital, rostrum=rostrum, vault=vault)
 
-load(file = "../Data/Processed/06-integration.rda")
+#load(file = "../Data/Processed/06-integration.rda")
 
 
 # Test with the phylogentic tree (and mean shapes)
-# int.test.5.phy <- phylo.integration(mean.shapes, partition.gp = lm.modules[, 4], phy=aus.tree)
-# int.test.5.res <- phylo.integration(residuals, partition.gp = lm.modules[, 4], phy=aus.tree)
-# # Save time consuming tests
-# save(int.test.5.phy, int.test.5.res, file = "../Data/Processed/06-integration.rda")
+int.test.5.phy <- phylo.integration(mean.shapes, partition.gp = lm.modules[, 4], phy=aus.tree)
+int.test.5.res <- phylo.integration(residuals, partition.gp = lm.modules[, 4], phy=aus.tree)
+# Save time consuming tests
+save(int.test.5.phy, int.test.5.res, file = "../Data/Processed/06-integration.rda")
 
 R_pls_matrix <- matrix( nrow=length(mean_modules), ncol=length(mean_modules))
 rownames(R_pls_matrix) <- names(mean_modules)
@@ -495,13 +495,13 @@ write.csv(integration_strength_comparison_table_full_vs_res, file = "../Data/Res
 This test uses covariance ratio (CR) coefficients (Adams 2016) to quantify the degree of modularity between hypothesized modules/partitions. The observed CR is compared to the distribution of randomized CR's, found by randomizing the landmarks into partitions of identical sample sizes. Accounts for random changes due to evolution via Brownian motion (Felice and Adams 2014). Modularity investigations only ask if significant modular structure is present given a specific hypothesis of modularity. Thus, unlike integraiton analyses, the CR values themselves are not tested statistically.
 ```{r}
 #save time by pre-loaded file
-load(file = "../Data/Processed/06-modularity.rda")
+#load(file = "../Data/Processed/06-modularity.rda")
 
 # Test with the phylogentic tree (and mean shapes)
-# mod.test.5.phy <- phylo.modularity(mean.shapes, partition.gp = lm.modules[, 4], phy=aus.tree)
-# mod.test.5.res <- phylo.modularity(residuals, partition.gp = lm.modules[, 4], phy=aus.tree)
-# Save time consuming tests
-# save(mod.test.5.phy, mod.test.5.res,  file = "../Data/Processed/06-modularity.rda")
+mod.test.5.phy <- phylo.modularity(mean.shapes, partition.gp = lm.modules[, 4], phy=aus.tree)
+mod.test.5.res <- phylo.modularity(residuals, partition.gp = lm.modules[, 4], phy=aus.tree)
+#Save time consuming tests
+save(mod.test.5.phy, mod.test.5.res,  file = "../Data/Processed/06-modularity.rda")
 
 
 # Make pairwise comparison table
