@@ -290,6 +290,6 @@ spheres3d(residuals_lm[,,1], radius=0.001)
 ```{r}
 
 
-save(residuals, file="../Data/Processed/allometry_residuals.rda")
+save(residuals,residuals_lm, file="../Data/Processed/allometry_residuals.rda")
 
 ```
