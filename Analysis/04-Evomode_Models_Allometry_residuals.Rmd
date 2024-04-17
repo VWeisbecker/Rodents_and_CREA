@@ -47,7 +47,7 @@ load(file = "../Data/Processed/03-graphing-vectors.rda")
 #which model of evolution does shape follow? Using Julien Clavel's mvMorph package
 
 ```{r}
-#load(file="../Data/Processed/Shape_evo_modes.rda")
+load(file="../Data/Processed/Shape_evo_modes.rda")
 #Fitting different evolutionary models to the shape data and tabulating the GICs. The BM analysis takes 5 minutes, the other two take longer - looking at nearly 30 minutes of computing time!
 
 two_d_array <- list( array2d=two.d.array(mean.shapes))
@@ -56,10 +56,10 @@ two_d_array <- list( array2d=two.d.array(mean.shapes))
 
 dimnames(two_d_array$array2d)[[1]] == aus.tree$tip.label
 
-BM_shapefit <- mvgls(array2d ~ 1 , aus.tree, data = two_d_array, model="BM" , method="PL-LOOCV")
-OU_shapefit <- mvgls(array2d ~ 1 , aus.tree, data = two_d_array, model="OU" , method="PL-LOOCV")
-EB_shapefit <- mvgls(array2d ~ 1 , aus.tree, data = two_d_array, model="EB" , method="PL-LOOCV")
-save(BM_shapefit,OU_shapefit,EB_shapefit, file="../Data/Processed/Shape_evo_modes.rda")
+# BM_shapefit <- mvgls(array2d ~ 1 , aus.tree, data = two_d_array, model="BM" , method="PL-LOOCV")
+# OU_shapefit <- mvgls(array2d ~ 1 , aus.tree, data = two_d_array, model="OU" , method="PL-LOOCV")
+# EB_shapefit <- mvgls(array2d ~ 1 , aus.tree, data = two_d_array, model="EB" , method="PL-LOOCV")
+# save(BM_shapefit,OU_shapefit,EB_shapefit, file="../Data/Processed/Shape_evo_modes.rda")
 
 GIC_BM<- GIC(BM_shapefit)
 GIC_OU <- GIC(OU_shapefit)
@@ -132,7 +132,7 @@ AICmin=AICs-min(AICs)
 
 #allometry
 ```{r}
-#load(file="../Data/Processed/Allom_evo_modes.rda")
+load(file="../Data/Processed/Allom_evo_modes.rda")
 
 #a paranoid check - don't judge me, I have ADHD :-D
 names(Csizes_fit)==dimnames(two_d_array$array2d)[[1]]
@@ -142,10 +142,10 @@ names(Csizes_fit)==aus.tree$tip.label
 
 #or re-compute, the below also takes ~30 minutes on my fasted computer
 
-BM_allomfit <- mvgls(array2d ~ log(Csizes_fit), aus.tree, data = two_d_array, model="BM" , method="PL-LOOCV")
-OU_allomfit <- mvgls(array2d ~ log(Csizes_fit), aus.tree, data = two_d_array, model="OU" , method="PL-LOOCV")
-EB_allomfit <- mvgls(array2d ~ log(Csizes_fit), aus.tree, data = two_d_array, model="EB" , method="PL-LOOCV")
-save(BM_allomfit,OU_allomfit,EB_allomfit, file="../Data/Processed/Allom_evo_modes.rda")
+# BM_allomfit <- mvgls(array2d ~ log(Csizes_fit), aus.tree, data = two_d_array, model="BM" , method="PL-LOOCV")
+# OU_allomfit <- mvgls(array2d ~ log(Csizes_fit), aus.tree, data = two_d_array, model="OU" , method="PL-LOOCV")
+# EB_allomfit <- mvgls(array2d ~ log(Csizes_fit), aus.tree, data = two_d_array, model="EB" , method="PL-LOOCV")
+# save(BM_allomfit,OU_allomfit,EB_allomfit, file="../Data/Processed/Allom_evo_modes.rda")
 
 GIC_BM<- GIC(BM_allomfit)
 GIC_OU <- GIC(OU_allomfit)
@@ -173,7 +173,7 @@ GICmin=GICs-min(GICs)
 #also checks of evolutionary modes of residuals of the best-fitting (OU) model
 ```{r}
 
-#load(file="../Data/Processed/Res_evo_modes.rda")
+load(file="../Data/Processed/Res_evo_modes.rda")
 
  
 # 
@@ -185,10 +185,10 @@ array2d_res <- OU_allomfit$residuals
 # 
 # 
 # 
-BM_resfit <- mvgls(array2d_res ~ 1, aus.tree, data = two_d_array, model="BM" , method="PL-LOOCV")
-OU_resfit <- mvgls(array2d_res ~ 1, aus.tree, data = two_d_array, model="OU" , method="PL-LOOCV")
-EB_resfit <- mvgls(array2d_res ~ 1, aus.tree, data = two_d_array, model="EB" , method="PL-LOOCV")
-save(BM_resfit,OU_resfit,EB_resfit, file="../Data/Processed/Res_evo_modes.rda")
+# BM_resfit <- mvgls(array2d_res ~ 1, aus.tree, data = two_d_array, model="BM" , method="PL-LOOCV")
+# OU_resfit <- mvgls(array2d_res ~ 1, aus.tree, data = two_d_array, model="OU" , method="PL-LOOCV")
+# EB_resfit <- mvgls(array2d_res ~ 1, aus.tree, data = two_d_array, model="EB" , method="PL-LOOCV")
+# save(BM_resfit,OU_resfit,EB_resfit, file="../Data/Processed/Res_evo_modes.rda")
 
 GIC_BM<- GIC(BM_resfit)
 GIC_OU <- GIC(OU_resfit)
@@ -246,14 +246,17 @@ allom_resid_OU <- arrayspecs(OU_allomfit$residuals, dim(mean.shapes)[[1]], 3)
 #also compute residuals from a pgls (Brownian-based) model
 allom_GDF <- geomorph.data.frame(coords = mean.shapes, Csize = info.means$MeanCsize)
 allometry.all <- procD.pgls(coords ~ log(Csize), aus.tree, data = allom_GDF)
+allometry_lm <- procD.lm(coords ~ log(Csize), data = allom_GDF)
 
 # Turn the residuals into an appropriate array
 dimnames(mean.shapes)[[3]] <- info.means$FullName
 allom_resid_PGLS <- arrayspecs(allometry.all$pgls.residuals, dim(mean.shapes)[[1]], 3)
+allom_resid_lm <- arrayspecs(allometry_lm$residuals, dim(mean.shapes)[[1]], 3)
 
 #compare the two types of residuals
 #they match
 dimnames(allom_resid_PGLS)[[3]]==dimnames(allom_resid_OU)[[3]]
+dimnames(allom_resid_PGLS)[[3]]==dimnames(allom_resid_lm)[[3]]
 
 head(allom_resid_PGLS)
 head(allom_resid_OU)
@@ -275,6 +278,12 @@ allom_resid <- allom_resid_PGLS
 # Add the consensus shape (from the GPA) to the residuals if you want to understand the landmark variation in the residuals - needed for script 06
 gpa <- gpagen(mean.shapes)
 residuals <- allom_resid + array(gpa$consensus, dim(allom_resid))
+residuals_lm <- allom_resid_lm + array(gpa$consensus, dim(allom_resid_lm))
+
+spheres3d(gpa$consensus, radius=0.001)
+spheres3d(residuals[,,1], radius=0.001)
+spheres3d(residuals_lm[,,1], radius=0.001)
+
 ```
 
 
