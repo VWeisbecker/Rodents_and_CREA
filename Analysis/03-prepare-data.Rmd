@@ -183,7 +183,7 @@ for (i in 1:length(empty_module_list)){
 
 ```
 
-#some checks - the r-pls values of the separately gpa'ed modules and the equivalent partition in the whole-shape gpa should be very high
+#some check to ensure no error crept in - the r-pls values of the separately gpa'ed modules and the equivalent partition in the whole-shape gpa should be very high
 
 ```{r}
 # 
@@ -205,19 +205,19 @@ for (i in 1:length(empty_module_list)){
 #also check that the configurations make shape sense
 ```{r}
 
-open3d()
-mfrow3d(2,3, sharedMouse = TRUE)
-
-cols=c("red", "blue", "purple", "orange", "pink")
-
-for (i in 1: length(names(Mean_module_shapes)) ){
-  
-spheres3d(Mean_module_shapes[[i]][,,2], col= cols[i], radius=0.01 )
-texts3d(0,0,0.1, texts = names(Mean_module_shapes)[i])
-  
-  next3d()
-  
-}
+# open3d()
+# mfrow3d(2,3, sharedMouse = TRUE)
+# 
+# cols=c("red", "blue", "purple", "orange", "pink")
+# 
+# for (i in 1: length(names(Mean_module_shapes)) ){
+#   
+# spheres3d(Mean_module_shapes[[i]][,,2], col= cols[i], radius=0.01 )
+# texts3d(0,0,0.1, texts = names(Mean_module_shapes)[i])
+#   
+#   next3d()
+#   
+# }
   
 ```
 
@@ -265,7 +265,7 @@ names(mean_modules_shapesize[[i]]$csize) <- aggregate(module_shape[[i]]$csize, l
 #check check
 names(mean_modules_shapesize$molar$csize) == dimnames(mean_modules_shapesize$basicran$shape)[[3]]
 
-#Checksto make sure the csizes all match up with the full data, just a correlation.
+#Checks to make sure the csizes all match up with the full data, just a correlation.
 
 for (i in 1: length(names(Mean_module_shapes)) ){
   
