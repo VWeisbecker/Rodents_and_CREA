@@ -44,7 +44,7 @@ Three specimens had major landmarking errors -- landmarks consistently placed in
 rat.out <- which(sm.sp.info$CatNum == "C11381")  # Rattus norvegicus
 uro.out <- which(sm.sp.info$CatNum == "J17610")  # Uromys caudimaculatus
 
-# Remove from both big and small datasets
+# Remove from datasets
 sm.sp.info <- sm.sp.info[-c(rat.out, uro.out), ]  # metadata
 sm.bY.shape <- sm.bY.shape[, , -c(rat.out, uro.out)]  # shape data
 
