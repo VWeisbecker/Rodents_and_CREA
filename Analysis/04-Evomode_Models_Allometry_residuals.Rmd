@@ -82,9 +82,9 @@ GICmin=GICs-min(GICs)
 
 #Does it make much of a difference to the coordinates if we adjust for OU vs BM evolution? 
 
-#trying to do what I would usually do if I ran pgls:
+
 resid_BM <- arrayspecs(BM_shapefit$residuals, dim(mean.shapes)[[1]], 3)
-#trying to do what I would usually do if I ran pgls:
+
 resid_OU <- arrayspecs(OU_shapefit$residuals, dim(mean.shapes)[[1]], 3)
 
 #The r-pls of these residuals is 1
@@ -124,7 +124,7 @@ names(AICs) <- c("BM", "OU", "EB" )
 AICmin=AICs-min(AICs)
   W_size =exp(-0.5*AICmin)/sum(exp(-0.5*AICmin))
   
-  #Size is BM 
+#Size is BM 
   W_size 
 
 
