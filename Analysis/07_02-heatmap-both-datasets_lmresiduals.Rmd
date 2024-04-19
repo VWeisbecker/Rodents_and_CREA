@@ -91,7 +91,7 @@ gpagen.shape$coords <- residuals_lm
 gpagen.shape$consensus <- res.mean
 class(gpagen.shape) <- "gpagen"
 
-# Measure extremes of variation from mean on PC1. VW I added "coords" here because, as per Thomas' explanation in the help file, this should give us the differences between the specimen with the minimum and maximun variation and gpagen.shape has $consensus which we don't want.
+# Measure extremes of variation from mean on PC1. VW I added "coords" here because, as per explanation in the help file, this should give us the differences between the specimen with the minimum and maximun variation and gpagen.shape has $consensus which we don't want.
 PC1.var.r <- variation.range(gpagen.shape$coords, return.ID = FALSE, axis = 1, ordination = ordination.r, type = "spherical")
 
 # Wrap specimens on the tangent space
@@ -134,7 +134,7 @@ view3d(phi = 90, zoom=0.7)
 rgl.snapshot("../Data/Processed/Heatmaps/LM_res_heatmaps.png")
 
 
-# Remove white space from all heatmaps (requires ImageMagik installed on PC; when installing ImageMagick, make sure you tick the option of installing legacy utilities, otherwise the below own't work)
+# Remove white space from all heatmaps (requires ImageMagik installed on PC; when installing ImageMagick, make sure you tick the option of installing legacy utilities, otherwise the below won't work)
 system("mogrify ../Data/Processed/Heatmaps/*.png -trim ../Data/Processed/Heatmaps/*.png")
 
 ```
