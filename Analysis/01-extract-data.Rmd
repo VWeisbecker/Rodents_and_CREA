@@ -17,6 +17,7 @@ We found in Marcy et al. 2018, that using bilateral shape data improved the reli
 
 Almost all upcoming analyses are done in the geometric morphometric R package, _geomorph_(Adams 2016; Adams & Otarola-Castillo 2013).
 
+
 ### Load packages
 Custom functions are defined in utilities.R for conciseness.
 ```{r message = FALSE}
@@ -133,7 +134,7 @@ no.XYZ <- str_sub(pt.names, 3, -1)  # removes xyz appended by Viewbox
 u.pt.names<- unique(no.XYZ)  # returns unique point and curve names
 ```
 
-### Split shape dataset into separate big and small patch datasets
+### Split shape dataset into separate big and small patch datasets; in this code, we only focus on the small patch dataset which landmarks the skull conventionally (i.e. according to sutures).
 ```{r}
 
 sm.data <- sp.info$Patch == "small"
@@ -177,7 +178,7 @@ sm.land.pairs <- FindPairs(sm.pt.names)
 ### Run bilateral GPA
 Now we are ready to re-run the generalized Procrustes alignment using bilateral landmark designations and extract the symmetric component of shape.
 
-The two bilateral GPAs can take some time (~20min total to run).
+The two bilateral GPAs can take some time
 
 WARNING: the `bilat.symmetry()` function will change the order of specimens in the shape file IF you have any non-unique names in the vector given to argument `ind =` of `bilat.symmetry()`. For example, if we had used `$CatNum`, then we would have 2 of the same CatNums for specimens with replicates. To avoid this, have a column for Replicate Status ("Rep" in this script), merge this with the CatNum column and any other columns of interest, and use this `$All` column for the `ind =` argument of `bilat.symmetry()`.
 ```{r}
