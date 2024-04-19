@@ -23,6 +23,10 @@ library(devtools) # CRAN v2.4.5
 library(landvR)   # [github::TGuillerme/landvR] v0.5.2   
 library(png)      # CRAN v0.1-8      
 library(Rvcg)     # CRAN v0.22.2
+library(magick)
+library(animation)
+
+
 
 # This sets the wd to local
 library(rstudioapi) # Safely Access the RStudio API
@@ -267,6 +271,8 @@ rgl.snapshot("../Data/Processed/Heatmaps/NO2_max-min_lat.png")
 
 ### Load in all heatmaps
 ```{r}
+
+
 # Remove white space from all heatmaps (requires ImageMagik installed on PC; when installing ImageMagick, make sure you tick the option of installing legacy utilities, otherwise the below own't work)
 system("mogrify ../Data/Processed/Heatmaps/*.png -trim ../Data/Processed/Heatmaps/*.png")
 ```
