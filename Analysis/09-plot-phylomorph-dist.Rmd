@@ -17,9 +17,10 @@ Creates bipanel Figure 5.
 
 ### Load packages, functions, and data from previous steps
 ```{r message = FALSE}
-library(geomorph)
-library(stringr)
-library(picante)  # needed for distance matrix
+library(geomorph) # CRAN v4.0.7
+library(stringr)  # CRAN v1.5.1
+library(picante)  # CRAN v1.8.2  
+# needed for distance matrix
 
 # This sets the wd to local
 library(rstudioapi) # Safely Access the RStudio API

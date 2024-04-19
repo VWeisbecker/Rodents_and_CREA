@@ -16,13 +16,14 @@ knitr::opts_chunk$set(echo=FALSE, message=FALSE, results='hide')
 ### Load packages and data
 Including installing libraries for landvR package, which creates the heatmaps.
 ```{r message = FALSE}
-library(geomorph) # CRAN v4.0.6
-library(devtools) # CRAN v2.4.5
+library(geomorph) # CRAN v4.0.7 
+library(devtools) # CRAN v2.4.5 
 #if(!require(dispRity)) install.packages("dispRity")  
 #if(!require(landvR)) install_github("TGuillerme/landvR")  
-library(landvR)   # [github::TGuillerme/landvR] v0.5.2
-library(png)      # CRAN v0.1-8 
-library(Rvcg)
+library(landvR)   # [github::TGuillerme/landvR] v0.5.2   
+library(png)      # CRAN v0.1-8      
+library(Rvcg)     # CRAN v0.22.2
+
 # This sets the wd to local
 library(rstudioapi) # Safely Access the RStudio API
 setwd(dirname(getActiveDocumentContext()$path))
