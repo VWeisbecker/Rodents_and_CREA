@@ -7,7 +7,7 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo=FALSE, message=FALSE, results='hide')
-knitr::opts_knit$set(root.dir = '../eco-rodents')
+
 ```
 
 # Plot PCAs for allometric and shape residual datasets
@@ -45,7 +45,7 @@ load(file = "../Data/Processed/03-graphing-vectors.rda")
 load(file="../Data/Processed/allometry_residuals.rda")
 
 
-#This is repeated in the modularity code but it's easier to just add it again here - less complicated.
+#This is repeated in the modularity code but it's easier to just add it again here 
 
 
 lm.modules <- read.csv("../Data/Processed/Landmark_modules.csv", sep = ",", header = TRUE)
@@ -171,7 +171,7 @@ Allometry_fullcsize[i, 1:7] <- unlist( temp$aov.table[1,])
 }
 
 
-#The result is not as expected. so just plotting a check here
+#The result is not as expected (no rostral allometry). so just plotting a check here to ensure that the modules are correctly fed in
 
 mfrow3d(2,3)
 

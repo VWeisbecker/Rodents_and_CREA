@@ -7,7 +7,7 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
-knitr::opts_knit$set(root.dir = '../eco-rodents')
+
 ```
 
 ## Prepare metadata, graphing vectors, and the phylogenetic tree
