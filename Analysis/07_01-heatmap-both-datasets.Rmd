@@ -439,7 +439,7 @@ shade3d(Pseudomys_delicatulus_JM18715, col="pink",tran = par3d(userMatrix=usrMat
 next3d()
 shade3d(Uromys_caudimaculatus_C6982, col="pink", tran = par3d(userMatrix=usrMat_Uromys ))
 
-#rgl.snapshot(filename = "../Data/Results/Pseudomys_vs_Uromys_meshes.png")
+rgl.snapshot(filename = "../Data/Results/Pseudomys_vs_Uromys_meshes.png")
 
 ```
 

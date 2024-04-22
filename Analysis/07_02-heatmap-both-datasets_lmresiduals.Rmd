@@ -7,7 +7,7 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo=FALSE, message=FALSE, results='hide')
-knitr::opts_knit$set(root.dir = '../eco-rodents')
+
 ```
 
 # Heatmaps both with-allometry and without-allometry 3D coordinates
@@ -136,6 +136,6 @@ rgl.snapshot("../Data/Processed/Heatmaps/LM_res_heatmaps.png")
 
 
 # Remove white space from all heatmaps (requires ImageMagik installed on PC; when installing ImageMagick, make sure you tick the option of installing legacy utilities, otherwise the below won't work)
-system("mogrify ../Data/Processed/Heatmaps/*.png -trim ../Data/Processed/Heatmaps/*.png")
+system("mogrify ../Data/Results/Heatmaps/*.png -trim ../Data/Processed/Heatmaps/*.png")
 
 ```
