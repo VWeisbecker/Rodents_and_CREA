@@ -1,9 +1,9 @@
 # Beyond CREA: evolutionary patterns of non-allometric shape variation and divergence in a highly allometric clade of murine rodents - data and code
 <a href="https://zenodo.org/doi/10.5281/zenodo.10211694"><img src="https://zenodo.org/badge/721090538.svg" alt="DOI"></a>
 
-Code authors: Ariel E. Marcy, Dr Thomas Guillerme, Dr Vera Weisbecker
+Code authors: Ariel E. Marcy, Dr Thomas Guillerme, Associate Professor Vera Weisbecker
 
-*All scripts are in RMarkdown format (.Rmd), which can be opened in RStudio. There, you can edit and run code chunks as normal or use the Knit button to create HTML versions with both code and output. After cloning this repo, remember to either set your working directory to the folder containgin the code on your computer or open an RStudio project from that folder.*
+*All scripts are in RMarkdown format (.Rmd), which can be opened in RStudio. There, you can edit and run code chunks as normal or use the Knit button to create HTML versions with both code and output. After cloning this repo, remember to either set your working directory to the folder containing the code on your computer or open an RStudio project from that folder. 3D meshes for plotting are released separately on Figshare as per the manuscript*
 
 ## Data
 **Landmarking data:**
