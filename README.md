@@ -3,7 +3,7 @@
 
 Code authors: Ariel E. Marcy, Dr Thomas Guillerme, Dr Vera Weisbecker
 
-*All scripts are in RMarkdown format (.Rmd), which can be opened in RStudio. There, you can edit and run code chunks as normal or use the Knit button to create HTML versions with both code and output. After cloning this repo, remember to either set your working directory to the eco-rodents folder on your computer or open an RStudio project from that folder.*
+*All scripts are in RMarkdown format (.Rmd), which can be opened in RStudio. There, you can edit and run code chunks as normal or use the Knit button to create HTML versions with both code and output. After cloning this repo, remember to either set your working directory to the folder containgin the code on your computer or open an RStudio project from that folder.*
 
 ## Data
 **Landmarking data:**
@@ -36,10 +36,20 @@ If you use these data, please cite the original authors:
 
 **The next four scripts perform the analyses**, the tables and figures they generate are saved to the [..Data/Results](/Data/Results) folder.
 
-* [**04-compare-PCAs.Rmd**](/Analysis/04-compare-PCAs.Rmd) Plots the full shape PCA versus shape residual PCAs colored by genus or by diet/locomotion. Tests for correlation between PC1 of the two datasets and runs Mantel tests comparing the entire morphospaces of both datasets. Plots screeplots of 3 different PCA datasets. **Generates Figure 1 and Supplementary Figure 1.**
-* [**05-heatmap-both-datasets.Rmd**](/Analysis/05-heatmap-both-datasets.Rmd) Plots the `landvR` heatmaps of shape changes over the PC axes for both allometric and residual shape (allometry-free) datasets. **Generates Figures 2 and 3.**
-* [**06-test-modularity.Rmd**](/Analysis/06-test-modularity.Rmd) Tests modularity and integration using the modules defined for mammalian skulls in Goswami 2006 & 2007. Modularity tests include `geomorph` function `phylo.modularity`and pairwise Mantel tests of each module. Tests for global integration with `geomorph` function `globalIntegration`. **Generates Figure 4, Table 1, and Supplementary Figure 3.**
-* [**07-plot-phylomorph-dist.Rmd**](/Analysis/07-plot-phylomorph-dist.Rmd) Plots phylo-morphological distance plots for both the full shape and shape residual datasets. **Generates Figure 5.**
+* [**04-Evomode_Models_Allometry_residuals.Rmd**](/Analysis/04-Evomode_Models_Allometry_residuals.RMD) Calculates the likelihood of shape, size, and allometric residual data evolving according to either Brownian Motion, Ornstein-Uhlenbeck, or Early Burst evolutionary models. Creates allometric residuals for downstream analyses. **creates Table 1**
+
+* [**05-plot-phylomorph-dist.Rmd**](/Analysis/05-plot-phylomorph-dist.Rmd) Plots phylo-morphological distance plots for both the full shape and shape residual datasets.  **creates Figure 1**
+
+* [**06_Allometry_modules.Rmd**](/Analysis/05_Allometry_modules.RMD) Computes allometry in individual modules based on joint and separate GPA **creates Table 2 and supplementary Table 1**
+
+* [**07-compare-PCAs.Rmd**](/Analysis/06-compare-PCAs.Rmd) Plots the full shape PCA versus shape residual PCAs colored by diet/locomotion.  **creates Figure 2**
+
+* [**08_01-heatmap-both-datasets.Rmd**](/Analysis/05-heatmap-both-datasets.Rmd) Plots the `landvR` heatmaps of shape changes over the PC axes for both allometric and residual shape (allometry-free) datasets. **creates Figure 3**
+
+[**08_01-heatmap-both-datasets.Rmd**](/Analysis/05-heatmap-both-datasets.Rmd) Plots the `landvR` heatmaps of shape changes over the allometric fit based on a non-phylogenetically corrected model **creates supplementary Figure 1**
+
+* [**09-test-modularity.Rmd**](/Analysis/06-test-modularity.Rmd) Tests modularity and integration using the modules defined for mammalian skulls in Goswami 2006 & 2007. **creates supplementary Figure 4 and Tables 3-6**
+
 
 ### Custom functions
 Some analyses call custom functions, most of which are defined in the [..Functions/utilities.R](/Functions/utilities.R) file. A modified version of `geomorph`'s function `plotGMPhyloMorphoSpace` is defined in the [..Functions/plotGMPhyloMorphoSpace_plotmod.R](/Functions/plotGMPhyloMorphoSpace_plotmod.R) file.
