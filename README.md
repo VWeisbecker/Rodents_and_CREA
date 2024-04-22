@@ -36,7 +36,7 @@ If you use these data, please cite the original authors:
 
 **The next four scripts perform the analyses**, the tables and figures they generate are saved to the [..Data/Results](/Data/Results) folder.
 
-* [**04-Evomode_Models_Allometry_residuals.Rmd**](/Analysis/04-Evomode_Models_Allometry_residuals.RMD) Calculates the likelihood of shape, size, and allometric residual data evolving according to either Brownian Motion, Ornstein-Uhlenbeck, or Early Burst evolutionary models. Creates allometric residuals for downstream analyses. **creates Table 1**
+* [**04-Evomode_Models_Allometry_residuals.Rmd**](/Analysis/04-Evomode_Models_Allometry_residuals.Rmd) Calculates the likelihood of shape, size, and allometric residual data evolving according to either Brownian Motion, Ornstein-Uhlenbeck, or Early Burst evolutionary models. Creates allometric residuals for downstream analyses. **creates Table 1**
 
 * [**05-plot-phylomorph-dist.Rmd**](/Analysis/05-plot-phylomorph-dist.Rmd) Plots phylo-morphological distance plots for both the full shape and shape residual datasets.  **creates Figure 1**
 
